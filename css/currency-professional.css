@@ -1,0 +1,373 @@
+/* Professional Currency & Icon Styling */
+/* Bangladeshi Taka with Font Awesome Integration */
+
+:root {
+  --taka-color: #2563eb;
+  --taka-accent: #1e40af;
+  --amount-success: #10b981;
+  --amount-warning: #f59e0b;
+  --amount-danger: #ef4444;
+  --amount-info: #3b82f6;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Taka Currency Display - Professional Design                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.currency-amount,
+.taka-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.currency-amount.large,
+.taka-amount.large {
+  font-size: 1.5rem;
+}
+
+.currency-amount.medium,
+.taka-amount.medium {
+  font-size: 1.125rem;
+}
+
+.currency-amount.small,
+.taka-amount.small {
+  font-size: 0.875rem;
+}
+
+/* Taka Icon Styling */
+.taka-sign,
+.fa-bangladeshi-taka-sign {
+  color: var(--taka-color);
+  font-weight: 900;
+  font-size: 1.1em;
+  margin-right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taka-amount.success .taka-sign,
+.taka-amount.success .fa-bangladeshi-taka-sign {
+  color: var(--amount-success);
+}
+
+.taka-amount.warning .taka-sign,
+.taka-amount.warning .fa-bangladeshi-taka-sign {
+  color: var(--amount-warning);
+}
+
+.taka-amount.danger .taka-sign,
+.taka-amount.danger .fa-bangladeshi-taka-sign {
+  color: var(--amount-danger);
+}
+
+.taka-amount.info .taka-sign,
+.taka-amount.info .fa-bangladeshi-taka-sign {
+  color: var(--amount-info);
+}
+
+/* Amount Value */
+.amount-value {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Highlighted amounts for reports */
+.amount-highlight {
+  background: linear-gradient(120deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.05));
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid var(--taka-color);
+}
+
+/* Badge Style Amounts */
+.amount-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.amount-badge .taka-sign {
+  color: white;
+  font-size: 1rem;
+}
+
+/* Summary Card Amount Display */
+.summary-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.summary-amount-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.summary-amount-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.summary-amount-value .taka-sign {
+  font-size: 1.4rem;
+  color: var(--taka-color);
+}
+
+/* Table Amount Display */
+table .taka-amount {
+  white-space: nowrap;
+}
+
+table .taka-sign {
+  min-width: 1.2em;
+}
+
+/* Print Friendly - Taka Display */
+@media print {
+  .taka-sign::before,
+  .fa-bangladeshi-taka-sign::before {
+    content: "৳";
+    font-family: 'Arial', sans-serif;
+    font-weight: 700;
+  }
+
+  .currency-amount,
+  .taka-amount {
+    color: #000;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .amount-badge {
+    background: #000 !important;
+    color: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Professional Font Awesome Icons with Styling                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Icon Colors */
+.fa-primary {
+  color: #2563eb;
+}
+
+.fa-success {
+  color: #10b981;
+}
+
+.fa-warning {
+  color: #f59e0b;
+}
+
+.fa-danger {
+  color: #ef4444;
+}
+
+.fa-info {
+  color: #3b82f6;
+}
+
+.fa-muted {
+  color: #94a3b8;
+}
+
+/* Icon Sizes - Professional Scale */
+.fa-xs { font-size: 0.75em; }
+.fa-sm { font-size: 0.875em; }
+.fa-base { font-size: 1em; }
+.fa-lg { font-size: 1.33333em; }
+.fa-xl { font-size: 1.5em; }
+.fa-2xl { font-size: 1.75em; }
+.fa-3xl { font-size: 2em; }
+.fa-4xl { font-size: 2.5em; }
+.fa-5xl { font-size: 3em; }
+
+/* Icon Circular Backgrounds */
+.fa-circle-bg {
+  background: circular;
+  padding: 0.75em;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fa-circle-bg.primary {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+}
+
+.fa-circle-bg.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.fa-circle-bg.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.fa-circle-bg.danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.fa-circle-bg.info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+/* Icon with Shadow */
+.fa-shadow {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.fa-shadow-lg {
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
+}
+
+/* Icon Animations */
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+.fa-pulse {
+  animation: fa-pulse 2s infinite;
+}
+
+.fa-bounce {
+  animation: fa-bounce 1s infinite;
+}
+
+.fa-fade {
+  animation: fa-fade 1.5s infinite;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fa-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fa-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.25em); }
+}
+
+@keyframes fa-fade {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Icon List */
+.fa-list {
+  list-style: none;
+  padding: 0;
+}
+
+.fa-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.fa-list li::before {
+  flex-shrink: 0;
+  width: 1.2em;
+  text-align: center;
+}
+
+/* Icon Button Styles */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+  color: #2563eb;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Icon with Text */
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-text.stacked {
+  flex-direction: column;
+  text-align: center;
+}
+
+/* Responsive Icon Sizes */
+@media (max-width: 768px) {
+  .fa-lg,
+  .fa-xl,
+  .fa-2xl { font-size: 1.25em; }
+  
+  .summary-amount-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Dark Mode Support                                               */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  .taka-sign,
+  .fa-bangladeshi-taka-sign {
+    filter: brightness(1.2);
+  }
+
+  .summary-amount-value {
+    color: #f1f5f9;
+  }
+
+  .amount-highlight {
+    background: linear-gradient(120deg, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0.1));
+    border-left-color: #60a5fa;
+  }
+}

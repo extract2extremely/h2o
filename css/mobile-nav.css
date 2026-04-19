@@ -1,0 +1,321 @@
+/* ═══════════════════════════════════════════ */
+/* MOBILE BOTTOM NAVIGATION - PROFESSIONAL */
+/* ═══════════════════════════════════════════ */
+
+/* Main navigation container */
+nav[aria-label="Mobile navigation"] {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    background: #ffffff;
+    border-top: 1px solid #f3f4f6;
+    box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.06);
+}
+
+nav[aria-label="Mobile navigation"] ul {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: clamp(0.5rem, 2vw, 1.5rem);
+    padding: clamp(0.6rem, 1.5vw, 1rem) clamp(0.4rem, 1.2vw, 0.8rem);
+}
+
+/* Individual navigation items */
+nav[aria-label="Mobile navigation"] li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.4rem, 1.2vw, 0.7rem);
+    cursor: pointer;
+    transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    padding: clamp(0.3rem, 0.8vw, 0.6rem);
+}
+
+/* Icons - Responsive sizing based on viewport */
+nav[aria-label="Mobile navigation"] .fa-solid {
+    font-size: clamp(1.5rem, 3.4vw, 2.3rem);
+    transition: all 250ms ease;
+    display: block;
+    width: auto;
+}
+
+/* Text labels - Responsive sizing */
+nav[aria-label="Mobile navigation"] span {
+    font-size: clamp(0.65rem, 1.9vw, 0.95rem);
+    letter-spacing: 0.3px;
+    transition: all 250ms ease;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════ */
+/* ACTIVE STATES - Color coded by page */
+/* ═══════════════════════════════════════════ */
+
+/* Dashboard - Active (Blue) */
+nav[aria-label="Mobile navigation"] li[data-page="dashboard"].active {
+    transform: scale(1.08) translateY(-2px);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="dashboard"].active .fa-solid {
+    color: #3b82f6;
+    filter: drop-shadow(0 3px 8px rgba(59, 130, 246, 0.35));
+    transform: scale(1.15);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="dashboard"].active span {
+    color: #3b82f6;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Users - Active (Cyan) */
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"].active {
+    transform: scale(1.08) translateY(-2px);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"].active .fa-solid {
+    color: #0891b2;
+    filter: drop-shadow(0 3px 8px rgba(8, 145, 178, 0.35));
+    transform: scale(1.15);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"].active span {
+    color: #0891b2;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Loans - Active (Violet) */
+nav[aria-label="Mobile navigation"] li[data-page="loans"].active {
+    transform: scale(1.08) translateY(-2px);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="loans"].active .fa-solid {
+    color: #8b5cf6;
+    filter: drop-shadow(0 3px 8px rgba(139, 92, 246, 0.35));
+    transform: scale(1.15);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="loans"].active span {
+    color: #8b5cf6;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Fast Input - Active (Amber) */
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"].active {
+    transform: scale(1.08) translateY(-2px);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"].active .fa-solid {
+    color: #f59e0b;
+    filter: drop-shadow(0 3px 8px rgba(245, 158, 11, 0.35));
+    transform: scale(1.15);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"].active span {
+    color: #f59e0b;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Reports - Active (Pink) */
+nav[aria-label="Mobile navigation"] li[data-page="reports"].active {
+    transform: scale(1.08) translateY(-2px);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="reports"].active .fa-solid {
+    color: #ec4899;
+    filter: drop-shadow(0 3px 8px rgba(236, 72, 153, 0.35));
+    transform: scale(1.15);
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="reports"].active span {
+    color: #ec4899;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════ */
+/* INACTIVE STATES - Grayscale with hover */
+/* ═══════════════════════════════════════════ */
+
+/* Inactive items - Gray */
+nav[aria-label="Mobile navigation"] li:not(.active) {
+    opacity: 0.7;
+}
+
+nav[aria-label="Mobile navigation"] li:not(.active) .fa-solid {
+    color: #9ca3af;
+    transition: all 250ms ease;
+}
+
+nav[aria-label="Mobile navigation"] li:not(.active) span {
+    color: #9ca3af;
+    font-weight: 500;
+    transition: all 250ms ease;
+}
+
+/* ═══════════════════════════════════════════ */
+/* HOVER EFFECTS */
+/* ═══════════════════════════════════════════ */
+
+/* Users - Hover (Cyan) */
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):active,
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):hover {
+    transform: scale(1.06) translateY(-1px);
+    opacity: 1;
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):active .fa-solid,
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):hover .fa-solid {
+    color: #0891b2;
+    filter: drop-shadow(0 2px 6px rgba(8, 145, 178, 0.25));
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):active span,
+nav[aria-label="Mobile navigation"] li[data-page="borrowers"]:not(.active):hover span {
+    color: #0891b2;
+    font-weight: 600;
+}
+
+/* Loans - Hover (Violet) */
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):active,
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):hover {
+    transform: scale(1.06) translateY(-1px);
+    opacity: 1;
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):active .fa-solid,
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):hover .fa-solid {
+    color: #8b5cf6;
+    filter: drop-shadow(0 2px 6px rgba(139, 92, 246, 0.25));
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):active span,
+nav[aria-label="Mobile navigation"] li[data-page="loans"]:not(.active):hover span {
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+/* Fast Input - Hover (Amber) */
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):active,
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):hover {
+    transform: scale(1.06) translateY(-1px);
+    opacity: 1;
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):active .fa-solid,
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):hover .fa-solid {
+    color: #f59e0b;
+    filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.25));
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):active span,
+nav[aria-label="Mobile navigation"] li[data-page="fast-collection"]:not(.active):hover span {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+/* Reports - Hover (Pink) */
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):active,
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):hover {
+    transform: scale(1.06) translateY(-1px);
+    opacity: 1;
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):active .fa-solid,
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):hover .fa-solid {
+    color: #ec4899;
+    filter: drop-shadow(0 2px 6px rgba(236, 72, 153, 0.25));
+}
+
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):active span,
+nav[aria-label="Mobile navigation"] li[data-page="reports"]:not(.active):hover span {
+    color: #ec4899;
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════ */
+/* RESPONSIVE BREAKPOINTS */
+/* ═══════════════════════════════════════════ */
+
+/* Extra small phones (320px - 374px) */
+@media (max-width: 374px) {
+    /* nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 1.3rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.6rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] ul {
+        gap: 0.2rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] li {
+        gap: 0.25rem;
+        padding: 0.2rem;
+    } */
+
+            nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 1.7rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.75rem;
+    }
+}
+
+/* Small phones (375px - 479px) */
+@media (min-width: 375px) and (max-width: 479px) {
+    /* nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 1.5rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.68rem;
+    } */
+
+        nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 1.7rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.75rem;
+    }
+}
+
+/* Medium phones (480px - 639px) */
+@media (min-width: 480px) and (max-width: 639px) {
+    nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 1.7rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.75rem;
+    }
+}
+
+/* Tablets (640px - 767px) */
+@media (min-width: 640px) and (max-width: 767px) {
+    nav[aria-label="Mobile navigation"] .fa-solid {
+        font-size: 2rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] span {
+        font-size: 0.85rem;
+    }
+    
+    nav[aria-label="Mobile navigation"] ul {
+        gap: 1.2rem;
+    }
+}
+
+/* Desktop and larger (768px and up) - HIDE */
+@media (min-width: 768px) {
+    nav[aria-label="Mobile navigation"] {
+        display: none !important;
+    }
+}
