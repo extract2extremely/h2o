@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinCollect - Diagnostic</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .diagnostic-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .diagnostic-section:last-child {
+            border-bottom: none;
+        }
+        .diagnostic-title {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .diagnostic-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 3px solid #ddd;
+        }
+        .diagnostic-item.success {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+        .diagnostic-item.error {
+            border-left-color: #f44336;
+            background: #fef5f5;
+        }
+        .diagnostic-item.warning {
+            border-left-color: #ff9800;
+            background: #fff8f0;
+        }
+        .diagnostic-item.loading {
+            border-left-color: #2196F3;
+            background: #f0f7ff;
+        }
+        .status-icon {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        .diagnostic-text {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+        }
+        .diagnostic-value {
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        .log-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .log-line {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 FinCollect Diagnostic</h1>
+        
+        <div class="diagnostic-section">
+            <div class="diagnostic-title">Browser Environment</div>
+            <div id="env-checks"></div>
+        </div>
+
+        <div class="diagnostic-section">
+            <div class="diagnostic-title">Library Status</div>
+            <div id="lib-checks"></div>
+        </div>
+
+        <div class="diagnostic-section">
+            <div class="diagnostic-title">Database Status</div>
+            <div id="db-checks"></div>
+        </div>
+
+        <div class="diagnostic-section">
+            <div class="diagnostic-title">Network Status</div>
+            <div id="network-checks"></div>
+        </div>
+
+        <div class="diagnostic-section">
+            <div class="diagnostic-title">Console Logs</div>
+            <div class="log-output" id="console-log"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-secondary" onclick="location.href = '/index.html'">Back to App</button>
+            <button class="btn-primary" onclick="runFullDiagnostic()">Run Full Diagnostic</button>
+        </div>
+    </div>
+
+    <script>
+        const logs = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        // Capture console logs
+        console.log = function(...args) {
+            logs.push({ type: 'log', msg: args.join(' ') });
+            originalLog.apply(console, args);
+            updateConsoleUI();
+        };
+
+        console.error = function(...args) {
+            logs.push({ type: 'error', msg: args.join(' ') });
+            originalError.apply(console, args);
+            updateConsoleUI();
+        };
+
+        console.warn = function(...args) {
+            logs.push({ type: 'warn', msg: args.join(' ') });
+            originalWarn.apply(console, args);
+            updateConsoleUI();
+        };
+
+        function updateConsoleUI() {
+            const consoleLog = document.getElementById('console-log');
+            consoleLog.innerHTML = logs.map(log => {
+                let color = '#00ff00';
+                if (log.type === 'error') color = '#ff0000';
+                if (log.type === 'warn') color = '#ffaa00';
+                return `<div class="log-line" style="color: ${color}">[${log.type.toUpperCase()}] ${log.msg}</div>`;
+            }).join('');
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        async function runFullDiagnostic() {
+            console.log('[DIAGNOSTIC] Starting full diagnostic...');
+            
+            // Environment checks
+            checkEnvironment();
+            
+            // Library checks
+            checkLibraries();
+            
+            // Database check
+            await checkDatabase();
+            
+            // Network check
+            await checkNetwork();
+            
+            console.log('[DIAGNOSTIC] Diagnostic complete!');
+        }
+
+        function checkEnvironment() {
+            console.log('[ENV] Browser:', navigator.userAgent.split(' ').slice(-2).join(' '));
+            console.log('[ENV] LocalStorage available:', typeof localStorage !== 'undefined');
+            console.log('[ENV] IndexedDB available:', typeof indexedDB !== 'undefined');
+            console.log('[ENV] Service Worker available:', 'serviceWorker' in navigator);
+
+            const envChecks = document.getElementById('env-checks');
+            envChecks.innerHTML = `
+                <div class="diagnostic-item success">
+                    <span class="status-icon">✓</span>
+                    <span class="diagnostic-text">Browser detected</span>
+                </div>
+                <div class="diagnostic-item ${typeof localStorage !== 'undefined' ? 'success' : 'error'}">
+                    <span class="status-icon">${typeof localStorage !== 'undefined' ? '✓' : '✗'}</span>
+                    <span class="diagnostic-text">LocalStorage: ${typeof localStorage !== 'undefined' ? 'Available' : 'Not available'}</span>
+                </div>
+                <div class="diagnostic-item ${typeof indexedDB !== 'undefined' ? 'success' : 'error'}">
+                    <span class="status-icon">${typeof indexedDB !== 'undefined' ? '✓' : '✗'}</span>
+                    <span class="diagnostic-text">IndexedDB: ${typeof indexedDB !== 'undefined' ? 'Available' : 'Not available'}</span>
+                </div>
+            `;
+        }
+
+        function checkLibraries() {
+            const libs = [
+                { name: 'Chart.js', check: () => typeof window.Chart === 'function' },
+                { name: 'SweetAlert2', check: () => window.Swal && typeof window.Swal.fire === 'function' },
+                { name: 'jsPDF', check: () => window.jspdf && window.jspdf.jsPDF },
+                { name: 'html2canvas', check: () => typeof window.html2canvas === 'function' },
+                { name: 'Font Awesome', check: () => document.querySelector('link[href*="fontawesome"]') !== null }
+            ];
+
+            console.log('[LIBS] Checking libraries...');
+            const libChecks = document.getElementById('lib-checks');
+            libChecks.innerHTML = libs.map(lib => {
+                const available = lib.check();
+                console.log(`[LIBS] ${lib.name}: ${available ? 'Loaded' : 'NOT LOADED'}`);
+                return `
+                    <div class="diagnostic-item ${available ? 'success' : 'error'}">
+                        <span class="status-icon">${available ? '✓' : '✗'}</span>
+                        <span class="diagnostic-text">${lib.name}: ${available ? 'Loaded' : 'Not loaded'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function checkDatabase() {
+            console.log('[DB] Checking IndexedDB...');
+            const dbChecks = document.getElementById('db-checks');
+            
+            try {
+                const request = indexedDB.open('FinanceCollectionDB', 2);
+                
+                request.onerror = () => {
+                    console.error('[DB] Failed to open database');
+                    dbChecks.innerHTML = `
+                        <div class="diagnostic-item error">
+                            <span class="status-icon">✗</span>
+                            <span class="diagnostic-text">Failed to open database</span>
+                        </div>
+                    `;
+                };
+
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    console.log('[DB] Database opened successfully');
+                    console.log('[DB] Version:', db.version);
+                    console.log('[DB] Object Stores:', Array.from(db.objectStoreNames).join(', '));
+                    
+                    dbChecks.innerHTML = `
+                        <div class="diagnostic-item success">
+                            <span class="status-icon">✓</span>
+                            <span class="diagnostic-text">Database opened successfully</span>
+                        </div>
+                        <div class="diagnostic-item success">
+                            <span class="status-icon">✓</span>
+                            <span class="diagnostic-text">Version: ${db.version}</span>
+                        </div>
+                        <div class="diagnostic-item success">
+                            <span class="status-icon">✓</span>
+                            <span class="diagnostic-text">Stores: ${Array.from(db.objectStoreNames).join(', ')}</span>
+                        </div>
+                    `;
+                    
+                    db.close();
+                };
+            } catch (e) {
+                console.error('[DB] Exception:', e.message);
+                dbChecks.innerHTML = `
+                    <div class="diagnostic-item error">
+                        <span class="status-icon">✗</span>
+                        <span class="diagnostic-text">Exception: ${e.message}</span>
+                    </div>
+                `;
+            }
+        }
+
+        async function checkNetwork() {
+            console.log('[NETWORK] Checking network status...');
+            const networkChecks = document.getElementById('network-checks');
+            
+            // Check online status
+            const isOnline = navigator.onLine;
+            console.log('[NETWORK] Online status:', isOnline);
+            
+            networkChecks.innerHTML = `
+                <div class="diagnostic-item ${isOnline ? 'success' : 'error'}">
+                    <span class="status-icon">${isOnline ? '✓' : '✗'}</span>
+                    <span class="diagnostic-text">Network: ${isOnline ? 'Online' : 'Offline'}</span>
+                </div>
+            `;
+
+            // Try to fetch a simple resource
+            try {
+                console.log('[NETWORK] Testing fetch...');
+                const response = await fetch('/manifest.json', { method: 'HEAD' });
+                console.log('[NETWORK] Fetch successful, status:', response.status);
+                networkChecks.innerHTML += `
+                    <div class="diagnostic-item success">
+                        <span class="status-icon">✓</span>
+                        <span class="diagnostic-text">Server responding (HTTP ${response.status})</span>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('[NETWORK] Fetch failed:', e.message);
+                networkChecks.innerHTML += `
+                    <div class="diagnostic-item error">
+                        <span class="status-icon">✗</span>
+                        <span class="diagnostic-text">Fetch failed: ${e.message}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            console.log('[DIAGNOSTIC] Page loaded, running diagnostic...');
+            runFullDiagnostic();
+        });
+    </script>
+</body>
+</html>

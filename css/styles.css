@@ -2627,6 +2627,106 @@ tr:last-child td {
 }
 
 /* ═══════════════════════════════════════════ */
+/* SAVINGS DETAILS TABLE (FIXED POSITION) */
+/* ═══════════════════════════════════════════ */
+
+.savings-details-table-wrapper {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(37, 99, 235, 0.08);
+}
+
+.savings-details-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.savings-details-table-wrapper thead {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+    border-bottom: 2px solid rgba(37, 99, 235, 0.15);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.savings-details-table-wrapper th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-primary);
+    border-right: 1px solid rgba(37, 99, 235, 0.1);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.savings-details-table-wrapper th:last-child {
+    border-right: none;
+}
+
+/* NO HOVER EFFECTS - Fixed position styling */
+.savings-details-table-wrapper tbody tr {
+    border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+    transition: none;
+    background: white;
+}
+
+.savings-details-table-wrapper tbody tr:nth-child(even) {
+    background: rgba(37, 99, 235, 0.02);
+}
+
+/* Important: No hover effects for fixed table */
+.savings-details-table-wrapper tbody tr:hover {
+    background: inherit;
+    transform: none;
+    box-shadow: none;
+    cursor: default;
+}
+
+.savings-details-table-wrapper td {
+    padding: 1rem;
+    border-right: 1px solid rgba(37, 99, 235, 0.08);
+    vertical-align: middle;
+    white-space: normal;
+}
+
+.savings-details-table-wrapper td:last-child {
+    border-right: none;
+}
+
+.savings-details-table-wrapper tbody tr td {
+    color: var(--text-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .savings-details-table-wrapper {
+        font-size: 0.85rem;
+    }
+    
+    .savings-details-table-wrapper th,
+    .savings-details-table-wrapper td {
+        padding: 0.75rem 0.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .savings-details-table-wrapper {
+        font-size: 0.8rem;
+    }
+    
+    .savings-details-table-wrapper th,
+    .savings-details-table-wrapper td {
+        padding: 0.6rem 0.4rem !important;
+    }
+}
+
+/* ═══════════════════════════════════════════ */
 /* INFO TAGS & BADGES */
 /* ═══════════════════════════════════════════ */
 .info-tag {

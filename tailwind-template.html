@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinCollect - Daily Collection (Tailwind Version)</title>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAILWIND CSS (Generated from tailwind-input.css) -->
+    <!-- ═══════════════════════════════════════════ -->
+    <link rel="stylesheet" href="css/tailwind.css">
+    
+    <!-- Font Awesome Icons (Keep existing) -->
+    <link rel="stylesheet" href="lib/fontawesome/css/all.min.css">
+    
+    <!-- Local Fonts -->
+    <link href="fonts/inter.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 (Keep existing) -->
+    <link rel="stylesheet" href="lib/sweetalert2/sweetalert2.min.css">
+    
+    <!-- Web Manifest -->
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="FinCollect - Daily Collection Manager">
+    <meta name="color-scheme" content="light">
+</head>
+
+<body class="font-sans bg-surface-secondary text-text-primary">
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- BOOT/SPLASH SCREEN -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Application loading">
+        <div class="boot-logo-wrap">
+            <div class="boot-icon-ring">
+                <i class="fa-solid fa-wallet boot-icon"></i>
+            </div>
+            <p class="boot-app-name">FinCollect</p>
+            <p class="boot-tagline">Daily Collection Manager</p>
+        </div>
+        <div class="boot-loader">
+            <div class="boot-loader-bar"></div>
+        </div>
+        <p class="boot-status" id="boot-status">Initializing…</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- LOGIN OVERLAY -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="login-overlay" class="fixed inset-0 bg-gradient-to-br from-primary-subtle to-surface-secondary flex items-center justify-center z-50" style="display:none; opacity:0;" role="dialog" aria-modal="true" aria-labelledby="login-title">
+        <div class="login-glass-card max-w-md w-11/12">
+            <h1 id="login-title" class="text-3xl font-bold text-primary mb-md text-center">Welcome Back</h1>
+            <p id="login-subtitle" class="text-text-secondary text-center mb-2xl">Sign in to FinCollect Dashboard</p>
+            
+            <form id="login-form" onsubmit="window.auth.handleLogin(); return false;" class="space-y-lg">
+                <!-- Username -->
+                <div class="form-group">
+                    <label for="login-username" class="form-label">Email / Username</label>
+                    <input type="text" id="login-username" class="login-input" placeholder="your@email.com" required>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group">
+                    <label for="login-password" class="form-label">Password</label>
+                    <input type="password" id="login-password" class="login-input" placeholder="••••••••" required>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="flex items-center gap-sm">
+                    <input type="checkbox" id="remember-me" class="rounded">
+                    <label for="remember-me" class="text-sm text-text-secondary">Remember me</label>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="btn btn-primary w-full">
+                    Sign In
+                </button>
+
+                <!-- Demo Login -->
+                <button type="button" onclick="window.auth.demoLogin()" class="btn btn-secondary w-full">
+                    Demo Account
+                </button>
+            </form>
+
+            <p class="text-xs text-text-tertiary text-center mt-lg">
+                Demo credentials: demo / demo
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MAIN APP CONTAINER (Desktop Sidebar Layout) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="main-app" class="grid grid-cols-1 md:grid-cols-[250px_1fr] min-h-screen bg-surface-secondary" style="display:none;">
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- SIDEBAR (Desktop Only) -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <aside class="hidden md:flex flex-col bg-surface-primary border-r border-gray-100 overflow-y-auto overflow-x-hidden z-100 shadow-sm" style="width: 250px; height: 100vh;">
+            
+            <!-- Brand Logo -->
+            <div class="brand flex items-center gap-sm px-sm py-sm mb-2xl">
+                <i class="fa-solid fa-wallet text-2xl text-primary"></i>
+                <span class="text-xl font-bold text-primary">FinCollect</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <ul class="nav-links flex-1">
+                <li class="nav-link active" data-page="dashboard">
+                    <i class="fa-solid fa-chart-line mr-md"></i>
+                    Dashboard
+                </li>
+                <li class="nav-link" data-page="users">
+                    <i class="fa-solid fa-users mr-md"></i>
+                    Users
+                </li>
+                <li class="nav-link" data-page="loans">
+                    <i class="fa-solid fa-money-bill-wave mr-md"></i>
+                    Loans
+                </li>
+                <li class="nav-link" data-page="savings">
+                    <i class="fa-solid fa-piggy-bank mr-md"></i>
+                    Savings
+                </li>
+                <li class="nav-link" data-page="fastinput">
+                    <i class="fa-solid fa-zap mr-md"></i>
+                    Fast Input
+                </li>
+                <li class="nav-link" data-page="reports">
+                    <i class="fa-solid fa-chart-pie mr-md"></i>
+                    Reports
+                </li>
+            </ul>
+
+            <!-- User Profile Section -->
+            <div class="border-t border-gray-100 pt-lg">
+                <div class="user-profile flex items-center gap-md p-md rounded-md hover:bg-surface-secondary cursor-pointer transition-smooth">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold">
+                        U
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-text-primary">User</p>
+                        <p class="text-xs text-text-secondary">Profile</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- MAIN CONTENT AREA -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div class="flex flex-col h-screen md:h-auto pb-24 md:pb-0">
+            
+            <!-- Top Bar / Header -->
+            <header class="top-bar sticky top-0 z-40 bg-surface-primary border-b border-gray-100 px-lg py-md shadow-sm flex items-center justify-between">
+                <h2 class="page-title text-2xl font-bold text-text-primary">Dashboard</h2>
+                
+                <div class="flex items-center gap-md">
+                    <!-- Search -->
+                    <input type="text" class="hidden md:block form-input max-w-xs" placeholder="Search...">
+                    
+                    <!-- Notifications -->
+                    <button class="relative p-md rounded-md hover:bg-surface-secondary transition-smooth">
+                        <i class="fa-solid fa-bell text-lg text-text-secondary"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full"></span>
+                    </button>
+                    
+                    <!-- Settings -->
+                    <button class="p-md rounded-md hover:bg-surface-secondary transition-smooth">
+                        <i class="fa-solid fa-cog text-lg text-text-secondary"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="view-container flex-1 overflow-y-auto p-md md:p-lg lg:p-2xl">
+                
+                <!-- Stats Grid - Responsive -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg mb-2xl">
+                    
+                    <!-- Total Users Card -->
+                    <div class="stat-card">
+                        <p class="stat-label flex items-center gap-sm">
+                            <i class="fa-solid fa-users text-primary"></i>
+                            Total Users
+                        </p>
+                        <div class="stat-value">1,234</div>
+                        <p class="stat-change positive">
+                            <i class="fa-solid fa-arrow-up mr-sm"></i>12% from last month
+                        </p>
+                    </div>
+
+                    <!-- Active Loans Card -->
+                    <div class="stat-card">
+                        <p class="stat-label flex items-center gap-sm">
+                            <i class="fa-solid fa-money-bill-wave text-info"></i>
+                            Active Loans
+                        </p>
+                        <div class="stat-value">456</div>
+                        <p class="stat-change positive">
+                            <i class="fa-solid fa-arrow-up mr-sm"></i>8% from last month
+                        </p>
+                    </div>
+
+                    <!-- Total Savings Card -->
+                    <div class="stat-card">
+                        <p class="stat-label flex items-center gap-sm">
+                            <i class="fa-solid fa-piggy-bank text-success"></i>
+                            Total Savings
+                        </p>
+                        <div class="stat-value">৳ 50K</div>
+                        <p class="stat-change positive">
+                            <i class="fa-solid fa-arrow-up mr-sm"></i>15% from last month
+                        </p>
+                    </div>
+
+                    <!-- Pending Reports Card -->
+                    <div class="stat-card">
+                        <p class="stat-label flex items-center gap-sm">
+                            <i class="fa-solid fa-chart-pie text-warning"></i>
+                            Pending Reports
+                        </p>
+                        <div class="stat-value">23</div>
+                        <p class="stat-change negative">
+                            <i class="fa-solid fa-arrow-down mr-sm"></i>5% from last month
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Content Sections - 2 Column on Desktop, 1 on Mobile -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-2xl">
+                    
+                    <!-- Recent Transactions -->
+                    <div class="card">
+                        <h3 class="text-lg font-semibold text-text-primary mb-lg">Recent Transactions</h3>
+                        
+                        <div class="space-y-md">
+                            <div class="flex items-center justify-between pb-md border-b border-gray-100">
+                                <div>
+                                    <p class="font-medium text-text-primary">Payment Received</p>
+                                    <p class="text-xs text-text-tertiary">Today at 10:30 AM</p>
+                                </div>
+                                <p class="font-semibold text-success">+৳ 5,000</p>
+                            </div>
+                            
+                            <div class="flex items-center justify-between pb-md border-b border-gray-100">
+                                <div>
+                                    <p class="font-medium text-text-primary">Loan Disbursement</p>
+                                    <p class="text-xs text-text-tertiary">Yesterday at 2:15 PM</p>
+                                </div>
+                                <p class="font-semibold text-danger">-৳ 10,000</p>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary w-full mt-lg">
+                            View All Transactions
+                        </button>
+                    </div>
+
+                    <!-- User Overview -->
+                    <div class="card">
+                        <h3 class="text-lg font-semibold text-text-primary mb-lg">User Overview</h3>
+                        
+                        <div class="space-y-md">
+                            <div>
+                                <div class="flex justify-between mb-sm">
+                                    <span class="text-sm font-medium text-text-secondary">Active Users</span>
+                                    <span class="text-sm font-semibold text-primary">85%</span>
+                                </div>
+                                <div class="w-full h-2 bg-surface-secondary rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary" style="width: 85%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between mb-sm">
+                                    <span class="text-sm font-medium text-text-secondary">Verified Users</span>
+                                    <span class="text-sm font-semibold text-success">72%</span>
+                                </div>
+                                <div class="w-full h-2 bg-surface-secondary rounded-full overflow-hidden">
+                                    <div class="h-full bg-success" style="width: 72%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary w-full mt-lg">
+                            View User Details
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Section - Responsive Horizontal Scroll on Mobile -->
+                <div class="card mt-2xl">
+                    <h3 class="text-lg font-semibold text-text-primary mb-lg">Top Borrowers</h3>
+                    
+                    <div class="table-container">
+                        <table class="table-responsive">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th class="hidden sm:table-cell">Email</th>
+                                    <th>Loan Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-medium">John Doe</td>
+                                    <td class="hidden sm:table-cell">john@example.com</td>
+                                    <td>৳ 50,000</td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">Jane Smith</td>
+                                    <td class="hidden sm:table-cell">jane@example.com</td>
+                                    <td>৳ 35,000</td>
+                                    <td><span class="status-badge pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">Bob Wilson</td>
+                                    <td class="hidden sm:table-cell">bob@example.com</td>
+                                    <td>৳ 25,000</td>
+                                    <td><span class="status-badge inactive">Inactive</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- MOBILE BOTTOM NAVIGATION (Mobile Only) -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <nav aria-label="Mobile navigation" class="fixed md:hidden bottom-0 left-0 right-0 bg-surface-primary border-t border-gray-100 shadow-2xl pb-safe">
+            <ul class="flex justify-around items-end gap-sm p-md">
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-dashboard transition-smooth" data-page="dashboard">
+                    <i class="fa-solid fa-chart-line text-2xl"></i>
+                    <span class="text-xs">Dashboard</span>
+                </li>
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-users transition-smooth" data-page="users">
+                    <i class="fa-solid fa-users text-2xl"></i>
+                    <span class="text-xs">Users</span>
+                </li>
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-loans transition-smooth" data-page="loans">
+                    <i class="fa-solid fa-money-bill-wave text-2xl"></i>
+                    <span class="text-xs">Loans</span>
+                </li>
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-savings transition-smooth" data-page="savings">
+                    <i class="fa-solid fa-piggy-bank text-2xl"></i>
+                    <span class="text-xs">Savings</span>
+                </li>
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-fastinput transition-smooth" data-page="fastinput">
+                    <i class="fa-solid fa-zap text-2xl"></i>
+                    <span class="text-xs">Input</span>
+                </li>
+                <li class="flex flex-col items-center gap-sm cursor-pointer text-text-secondary hover:text-nav-reports transition-smooth" data-page="reports">
+                    <i class="fa-solid fa-chart-pie text-2xl"></i>
+                    <span class="text-xs">Reports</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- FLOATING ACTION BUTTON (FAB) - Mobile -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <button class="fab md:hidden">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- FLOATING MENU - Mobile -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div id="floating-menu" class="floating-menu md:hidden">
+            <div class="floating-menu-item" onclick="alert('Reports view would open here')">
+                <i class="fa-solid fa-chart-pie text-primary"></i>
+                <span>Reports</span>
+            </div>
+            <div class="floating-menu-item" onclick="alert('Sync would happen here')">
+                <i class="fa-solid fa-sync text-primary"></i>
+                <span>Sync</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SCRIPTS -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    
+    <!-- Existing Libraries -->
+    <script src="lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="lib/chartjs/chart.min.js"></script>
+    <script src="lib/html2canvas/html2canvas.min.js"></script>
+    <script src="lib/jspdf/jspdf.umd.min.js"></script>
+    <script src="lib/jspdf/jspdf.plugin.autotable.min.js"></script>
+    <script src="lib/sweetalert2/sweetalert2.min.js"></script>
+    
+    <!-- Your App Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/library-manager.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/service-worker-register.js"></script>
+    
+    <script>
+        // Simple demo - your actual app.js will handle this
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide splash screen and show main app
+            setTimeout(function() {
+                document.getElementById('boot-splash').style.display = 'none';
+                document.getElementById('main-app').style.display = 'grid';
+            }, 2000);
+        });
+    </script>
+
+</body>
+
+</html>

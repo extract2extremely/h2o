@@ -6376,9 +6376,9 @@ ${styles}
           <th style="text-align:center;width:35px;">No</th>
           <th>Due Date</th>
           <th>Status</th>
-          <th style="text-align:right;">Due Amt</th>
+          <th style="text-align:right;">Due Amount<th>
           <th style="text-align:center;">Last Collected</th>
-          <th style="text-align:right;">Paid Amt</th>
+          <th style="text-align:right;">Paid Amount</th>
           <th>Received By</th>
         </tr>
       </thead>
@@ -7017,49 +7017,51 @@ ${renderSection("Monthly Collections", monthly, "#f59e0b")}`;
       return '<div style="padding: 3rem 2rem; text-align: center; color: #9ca3af;"><i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i><p style="font-size: 1rem; font-weight: 500;">No transactions found</p></div>';
     }
 
-    const rows = transactions.map((transaction, index) => {
+    let rows = '';
+    transactions.forEach((transaction, index) => {
       const dateObj = new Date(transaction.date);
       const dateStr = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
       const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const bgStyle = index % 2 === 0 ? 'background: rgba(248, 250, 252, 0.3);' : '';
+      const onMouseOutStyle = index % 2 === 0 ? 'rgba(248, 250, 252, 0.3)' : 'transparent';
+      const amount = transaction.amount.toLocaleString('en-US', {minimumFractionDigits: 2});
+      const receivedByFirstChar = transaction.receivedBy.charAt(0).toUpperCase();
       
-      return \`
-<tr style="border-bottom: 1px solid #f3f4f6; transition: background 200ms ease; \${index % 2 === 0 ? 'background: rgba(248, 250, 252, 0.3);' : ''}" 
-    onmouseover="this.style.background='linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%)'" 
-    onmouseout="this.style.background='\${index % 2 === 0 ? 'rgba(248, 250, 252, 0.3)' : 'transparent'}'" >
-  <td style="padding: 1rem; font-weight: 500; color: #1f2937; border-right: 1px solid #e5e7eb;">\${transaction.borrowerName}</td>
-  <td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;">
-    <span style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">
-      <i class="fa-solid fa-file-invoice" style="margin-right: 0.25rem;"></i>\${transaction.type}
-    </span>
-  </td>
-  <td style="padding: 1rem; text-align: center; color: #475569; font-size: 0.875rem; border-right: 1px solid #e5e7eb;">
-    <div style="font-weight: 500;">\${dateStr}</div>
-    <small style="color: #9ca3af;">\${timeStr}</small>
-  </td>
-  <td style="padding: 1rem; text-align: right; color: #10b981; font-weight: 700; font-size: 1rem; border-right: 1px solid #e5e7eb;">৳\${transaction.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-  <td style="padding: 1rem; text-align: center; color: #1f2937; font-weight: 500;">
-    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-      <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 700;">\${transaction.receivedBy.charAt(0).toUpperCase()}</div>
-      <span>\${transaction.receivedBy}</span>
-    </div>
-  </td>
-</tr>\`;
-    }).join('');
+      rows += '<tr style="border-bottom: 1px solid #f3f4f6; transition: background 200ms ease; ' + bgStyle + '" onmouseover="this.style.background=\'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%)\'" onmouseout="this.style.background=\'' + onMouseOutStyle + '\'">\n';
+      rows += '  <td style="padding: 1rem; font-weight: 500; color: #1f2937; border-right: 1px solid #e5e7eb;">' + transaction.borrowerName + '</td>\n';
+      rows += '  <td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;">\n';
+      rows += '    <span style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">\n';
+      rows += '      <i class="fa-solid fa-file-invoice" style="margin-right: 0.25rem;"></i>' + transaction.type + '\n';
+      rows += '    </span>\n';
+      rows += '  </td>\n';
+      rows += '  <td style="padding: 1rem; text-align: center; color: #475569; font-size: 0.875rem; border-right: 1px solid #e5e7eb;">\n';
+      rows += '    <div style="font-weight: 500;">' + dateStr + '</div>\n';
+      rows += '    <small style="color: #9ca3af;">' + timeStr + '</small>\n';
+      rows += '  </td>\n';
+      rows += '  <td style="padding: 1rem; text-align: right; color: #10b981; font-weight: 700; font-size: 1rem; border-right: 1px solid #e5e7eb;">৳' + amount + '</td>\n';
+      rows += '  <td style="padding: 1rem; text-align: center; color: #1f2937; font-weight: 500;">\n';
+      rows += '    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">\n';
+      rows += '      <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 700;">' + receivedByFirstChar + '</div>\n';
+      rows += '      <span>' + transaction.receivedBy + '</span>\n';
+      rows += '    </div>\n';
+      rows += '  </td>\n';
+      rows += '</tr>\n';
+    });
 
-    return \`<table style="width: 100%; border-collapse: collapse;">
-  <thead>
-    <tr style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-bottom: 2px solid #d1d5db; position: sticky; top: 0; z-index: 10;">
-      <th style="padding: 1rem; text-align: left; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Borrower</th>
-      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Type</th>
-      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Date & Time</th>
-      <th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Amount</th>
-      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">Received By</th>
-    </tr>
-  </thead>
-  <tbody>
-    \${rows}
-  </tbody>
-</table>\`;
+    return '<table style="width: 100%; border-collapse: collapse;">\n' +
+      '  <thead>\n' +
+      '    <tr style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-bottom: 2px solid #d1d5db; position: sticky; top: 0; z-index: 10;">\n' +
+      '      <th style="padding: 1rem; text-align: left; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Borrower</th>\n' +
+      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Type</th>\n' +
+      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Date & Time</th>\n' +
+      '      <th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Amount</th>\n' +
+      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">Received By</th>\n' +
+      '    </tr>\n' +
+      '  </thead>\n' +
+      '  <tbody>\n' +
+      rows +
+      '  </tbody>\n' +
+      '</table>';
   };
 
   const updateTable = () => {
@@ -9987,16 +9989,16 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
           <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
             <thead style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%); border-bottom: 2px solid rgba(37, 99, 235, 0.15);">
               <tr>
-                <th onclick="window.ui._sortRecords('date')" style="padding: 1rem; text-align: left; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-calendar-alt" style="margin-right: 0.5rem; opacity: 0.6;"></i>Date ${state.sortBy === 'date' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
-                <th onclick="window.ui._sortRecords('borrowerName')" style="padding: 1rem; text-align: left; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-users" style="margin-right: 0.5rem; opacity: 0.6;"></i>User ${state.sortBy === 'borrowerName' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
-                <th onclick="window.ui._sortRecords('loanNo')" style="padding: 1rem; text-align: left; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-tag" style="margin-right: 0.5rem; opacity: 0.6;"></i>Type ${state.sortBy === 'loanNo' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
-                <th onclick="window.ui._sortRecords('amount')" style="padding: 1rem; text-align: right; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-coins" style="margin-right: 0.5rem; opacity: 0.6;"></i>Amount ${state.sortBy === 'amount' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
-                <th style="padding: 1rem; text-align: left; font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-check-circle" style="margin-right: 0.5rem; opacity: 0.6; color: #16a34a;"></i>Received By</th>
-                <th style="padding: 1rem; text-align: left; font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.1);"><i class="fa-solid fa-info-circle" style="margin-right: 0.5rem; opacity: 0.6;"></i>Details</th>
+                <th onclick="window.ui._sortRecords('date')" style="padding: 1rem; text-align: center; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);">Date ${state.sortBy === 'date' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+                <th onclick="window.ui._sortRecords('borrowerName')" style="padding: 1rem; text-align: center; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);">User ${state.sortBy === 'borrowerName' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+                <th onclick="window.ui._sortRecords('loanNo')" style="padding: 1rem; text-align: center; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);">Type ${state.sortBy === 'loanNo' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+                <th onclick="window.ui._sortRecords('amount')" style="padding: 1rem; text-align: center; font-weight: 700; cursor: pointer; border-right: 1px solid rgba(37, 99, 235, 0.1);">Amount ${state.sortBy === 'amount' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+                <th style="padding: 1rem; text-align: center; font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.1);">Received By</th>
+                <th style="padding: 1rem; text-align: center; font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.1);">Details</th>
               </tr>
             </thead>
             <tbody>
-              ${paginatedRecords.length > 0 ? paginatedRecords.map((r, idx) => `<tr style="border-bottom: 1px solid rgba(37, 99, 235, 0.08); ${idx % 2 === 0 ? 'background: rgba(37, 99, 235, 0.02);' : 'background: white;'}"><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); font-weight: 500;"><i class="fa-solid fa-calendar" style="color: #2563eb; margin-right: 0.5rem; opacity: 0.7;"></i>${formatDate(r.date)}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); font-weight: 600;"><i class="fa-solid fa-user-circle" style="color: #0891b2; margin-right: 0.5rem; opacity: 0.7;"></i>${r.borrowerName}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08);"><span style="background: linear-gradient(135deg, ${r.transactionType === 'savings' ? 'rgba(124, 58, 237, 0.12) 0%, rgba(147, 51, 234, 0.06)' : 'rgba(37, 99, 235, 0.12) 0%, rgba(59, 130, 246, 0.06)'} 100%); border: 1px solid ${r.transactionType === 'savings' ? 'rgba(147, 51, 234, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; padding: 0.4rem 0.8rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 700; color: ${r.transactionType === 'savings' ? '#6d28d9' : '#1e40af'}; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fa-solid ${r.transactionType === 'savings' ? 'fa-piggy-bank' : 'fa-tag'}" style="opacity: 0.7;"></i>${r.transactionType === 'savings' ? 'Savings' : 'Loan'} (${r.loanNo})</span></td><td style="padding: 1rem; text-align: right; color: var(--success); font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.08);">৳${formatAmount(r.amount)}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08);">${r.receivedBy ? `<span style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1px solid rgba(34, 197, 94, 0.2); padding: 0.4rem 0.7rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 600; color: #16a34a; display: flex; align-items: center; gap: 0.4rem; width: fit-content;"><i class="fa-solid fa-badge-check" style="opacity: 0.8;"></i>${r.receivedBy}</span>` : '<span style="font-size: 0.8rem; color: #cbd5e1; font-style: italic;">—</span>'}</td><td style="padding: 1rem;"><span style="font-size: 0.8rem; background: rgba(37, 99, 235, 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-md); display: inline-block;">ID: ${r.id.substring(0, 8)}...</span></td></tr>`).join('') : '<tr><td colspan="6" style="padding: 3rem 1rem; text-align: center; color: #94a3b8;"><i class="fa-solid fa-inbox" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>No records found</td></tr>'}
+              ${paginatedRecords.length > 0 ? paginatedRecords.map((r, idx) => `<tr style="border-bottom: 1px solid rgba(37, 99, 235, 0.08); ${idx % 2 === 0 ? 'background: rgba(37, 99, 235, 0.02);' : 'background: white;'}"><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); font-weight: 500; text-align: center;">${formatDate(r.date)}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); font-weight: 600; text-align: center;">${r.borrowerName}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); text-align: center;"><span style="background: linear-gradient(135deg, ${r.transactionType === 'savings' ? 'rgba(124, 58, 237, 0.12) 0%, rgba(147, 51, 234, 0.06)' : 'rgba(37, 99, 235, 0.12) 0%, rgba(59, 130, 246, 0.06)'} 100%); border: 1px solid ${r.transactionType === 'savings' ? 'rgba(147, 51, 234, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; padding: 0.4rem 0.8rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 700; color: ${r.transactionType === 'savings' ? '#6d28d9' : '#1e40af'}; display: inline-flex; align-items: center; justify-content: center;">${r.transactionType === 'savings' ? 'Savings' : 'Loan'} (${r.loanNo})</span></td><td style="padding: 1rem; text-align: center; color: var(--success); font-weight: 700; border-right: 1px solid rgba(37, 99, 235, 0.08);">৳${formatAmount(r.amount)}</td><td style="padding: 1rem; border-right: 1px solid rgba(37, 99, 235, 0.08); text-align: center;">${r.receivedBy ? `<span style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1px solid rgba(34, 197, 94, 0.2); padding: 0.4rem 0.7rem; border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 600; color: #16a34a; display: inline-block;">${r.receivedBy}</span>` : '<span style="font-size: 0.8rem; color: #cbd5e1; font-style: italic;">—</span>'}</td><td style="padding: 1rem; text-align: center;"><span style="font-size: 0.8rem; background: rgba(37, 99, 235, 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-md); display: inline-block;">ID: ${r.id.substring(0, 8)}...</span></td></tr>`).join('') : '<tr><td colspan="6" style="padding: 3rem 1rem; text-align: center; color: #94a3b8;">No records found</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -11919,6 +11921,229 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
       </div>
 
       ${scheduleHtml}
+
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <!-- SAVINGS DETAILS TRANSACTION TABLE (FIXED POSITION) -->
+      <!-- ═══════════════════════════════════════════════════════════════ -->
+      <div style="margin-top: 2.5rem; margin-bottom: 1.5rem;">
+        <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 1.125rem; font-weight: 700; color: var(--text-primary);">
+          <i class="fa-solid fa-transaction" style="color: var(--primary); opacity: 0.8;"></i>
+          All Transactions (${txns.length || 0})
+        </h3>
+
+        <div class="savings-details-table-wrapper" style="
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+          border: 1px solid rgba(37, 99, 235, 0.08);
+          background: white;
+          position: relative;
+        ">
+          <div style="overflow-x: auto;">
+            <table style="
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 0.9rem;
+              background: white;
+            ">
+              <thead style="
+                background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+                border-bottom: 2px solid rgba(37, 99, 235, 0.15);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+              ">
+                <tr>
+                  <th style="
+                    padding: 1rem;
+                    text-align: left;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-right: 1px solid rgba(37, 99, 235, 0.1);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-calendar-alt" style="margin-right: 0.5rem; opacity: 0.6;"></i>Date
+                  </th>
+                  <th style="
+                    padding: 1rem;
+                    text-align: left;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-right: 1px solid rgba(37, 99, 235, 0.1);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-bookmark" style="margin-right: 0.5rem; opacity: 0.6;"></i>Type
+                  </th>
+                  <th style="
+                    padding: 1rem;
+                    text-align: right;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-right: 1px solid rgba(37, 99, 235, 0.1);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-coins" style="margin-right: 0.5rem; opacity: 0.6;"></i>Amount
+                  </th>
+                  <th style="
+                    padding: 1rem;
+                    text-align: left;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-right: 1px solid rgba(37, 99, 235, 0.1);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-user-check" style="margin-right: 0.5rem; opacity: 0.6; color: #16a34a;"></i>Received By
+                  </th>
+                  <th style="
+                    padding: 1rem;
+                    text-align: left;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    border-right: 1px solid rgba(37, 99, 235, 0.1);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-note-sticky" style="margin-right: 0.5rem; opacity: 0.6;"></i>Note
+                  </th>
+                  <th style="
+                    padding: 1rem;
+                    text-align: left;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.5px;
+                  ">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 0.5rem; opacity: 0.6;"></i>ID
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                ${txns.length > 0 ? txns.sort((a, b) => new Date(b.date) - new Date(a.date)).map((t, idx) => {
+                  const transactionType = t.type || 'Deposit';
+                  const formattedDate = t.date ? new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                  const formattedAmount = parseFloat(t.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                  const receivedBy = t.receivedBy || '—';
+                  const note = t.note || '—';
+                  const bgColor = idx % 2 === 0 ? 'rgba(37, 99, 235, 0.02)' : 'white';
+                  
+                  return `
+                    <tr style="
+                      border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+                      background: ${bgColor};
+                      padding: 0;
+                    ">
+                      <td style="
+                        padding: 1rem;
+                        border-right: 1px solid rgba(37, 99, 235, 0.08);
+                        font-weight: 500;
+                        color: var(--text-primary);
+                      ">
+                        <i class="fa-solid fa-calendar" style="color: #2563eb; margin-right: 0.5rem; opacity: 0.7;"></i>${formattedDate}
+                      </td>
+                      <td style="
+                        padding: 1rem;
+                        border-right: 1px solid rgba(37, 99, 235, 0.08);
+                      ">
+                        <span style="
+                          background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(147, 51, 234, 0.06) 100%);
+                          border: 1px solid rgba(147, 51, 234, 0.2);
+                          padding: 0.4rem 0.8rem;
+                          border-radius: 6px;
+                          font-size: 0.8rem;
+                          font-weight: 700;
+                          color: #6d28d9;
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 0.4rem;
+                        ">
+                          <i class="fa-solid fa-piggy-bank" style="opacity: 0.7;"></i>${transactionType}
+                        </span>
+                      </td>
+                      <td style="
+                        padding: 1rem;
+                        text-align: right;
+                        color: #16a34a;
+                        font-weight: 700;
+                        border-right: 1px solid rgba(37, 99, 235, 0.08);
+                      ">
+                        ৳${formattedAmount}
+                      </td>
+                      <td style="
+                        padding: 1rem;
+                        border-right: 1px solid rgba(37, 99, 235, 0.08);
+                      ">
+                        <span style="
+                          background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
+                          border: 1px solid rgba(34, 197, 94, 0.2);
+                          padding: 0.4rem 0.7rem;
+                          border-radius: 6px;
+                          font-size: 0.8rem;
+                          font-weight: 600;
+                          color: #16a34a;
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 0.4rem;
+                        ">
+                          <i class="fa-solid fa-badge-check" style="opacity: 0.8;"></i>${receivedBy}
+                        </span>
+                      </td>
+                      <td style="
+                        padding: 1rem;
+                        border-right: 1px solid rgba(37, 99, 235, 0.08);
+                        color: var(--text-secondary);
+                        font-size: 0.85rem;
+                      ">
+                        ${note}
+                      </td>
+                      <td style="
+                        padding: 1rem;
+                        font-size: 0.8rem;
+                        color: #64748b;
+                      ">
+                        <span style="
+                          background: rgba(37, 99, 235, 0.08);
+                          padding: 0.4rem 0.6rem;
+                          border-radius: 6px;
+                          display: inline-block;
+                          font-family: monospace;
+                          letter-spacing: 0.5px;
+                        ">${t.id ? t.id.substring(0, 8).toUpperCase() : 'N/A'}...</span>
+                      </td>
+                    </tr>
+                  `;
+                }).join('') : '<tr><td colspan="6" style="padding: 3rem 1rem; text-align: center; color: #94a3b8;"><i class="fa-solid fa-inbox" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i>No transactions found</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Fixed Footer with Summary -->
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(37, 99, 235, 0.02);
+            border-top: 1px solid rgba(37, 99, 235, 0.1);
+          ">
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">
+              Total Transactions: <strong>${txns.length}</strong>
+            </div>
+            <div style="font-size: 0.9rem; color: var(--success); font-weight: 700;">
+              Total Amount: <i class="fi fi-sr-bangladeshi-taka-sign" style="font-size: 0.85em; margin-right: 2px;"></i>৳${txns.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }
 

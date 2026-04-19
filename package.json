@@ -1,0 +1,19 @@
+{
+  "name": "fincollect-tailwind",
+  "version": "2.0.0",
+  "description": "FinCollect - Daily Collection Manager with Tailwind CSS",
+  "scripts": {
+    "build:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind.css",
+    "watch:css": "tailwindcss -i ./css/tailwind-input.css -o ./css/tailwind.css --watch",
+    "dev": "npm run watch:css",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.16"
+  },
+  "keywords": ["financial", "collection", "manager", "tailwind", "responsive"],
+  "author": "",
+  "license": "ISC"
+}
