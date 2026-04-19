@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinCollect - Daily Collection</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Mobile Bottom Navigation Styles -->
+    <link rel="stylesheet" href="css/mobile-nav.css">
+    <!-- Font Awesome - Local Offline Version -->
+    <link rel="stylesheet" href="lib/fontawesome/css/all.min.css">
+    <!-- Professional Currency Styling -->
+    <link rel="stylesheet" href="css/currency-professional.css">
+    <!-- Local Fonts -->
+    <link href="fonts/inter.css" rel="stylesheet">
+    <!-- SweetAlert2 Styling -->
+    <link rel="stylesheet" href="lib/sweetalert2/sweetalert2.min.css">
+    <!-- Web Manifest (optional, only loaded when served via HTTP/HTTPS) -->
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="FinCollect - Daily Collection Manager">
+    <meta name="color-scheme" content="light">
+</head>
+
+<body>
+
+    <!-- Boot Splash Screen -->
+    <div id="boot-splash" class="boot-splash" role="status" aria-live="polite" aria-label="Application loading">
+        <div class="boot-logo-wrap">
+            <div class="boot-icon-ring">
+                <i class="fa-solid fa-wallet boot-icon"></i>
+            </div>
+            <p class="boot-app-name">FinCollect</p>
+            <p class="boot-tagline">Daily Collection Manager</p>
+        </div>
+        <div class="boot-loader">
+            <div class="boot-loader-bar"></div>
+        </div>
+        <p class="boot-status" id="boot-status">Initializing…</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-overlay" class="login-overlay" style="display:none; opacity:0;" role="dialog" aria-modal="true" aria-labelledby="login-title" aria-describedby="login-subtitle">
+        <div class="login-glass-card">
+            <h1 id="login-title">Welcome Back</h1>
+            <p id="login-subtitle">Sign in to FinCollect Dashboard</p>
+            <form id="login-form" onsubmit="window.auth.handleLogin(); return false;">
+                <div class="login-form-group">
+                    <label for="login-username">Email / Username</label>
+                    <input type="text" id="login-username" class="login-input" placeholder="admin@hotmail.com" autocomplete="username" required>
+                </div>
+                <div class="login-form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="login-input" placeholder="••••••••" autocomplete="current-password" required>
+                </div>
+                <button type="submit" id="login-btn" class="login-btn">LOGIN</button>
+                <div id="login-error" class="login-error" role="alert" aria-live="assertive"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-container" style="display:none;">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="brand" aria-label="FinCollect">
+                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
+                <span>FinCollect</span>
+            </div>
+            <ul class="nav-links">
+                <li data-page="dashboard"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Dashboard</li>
+                <li data-page="borrowers"><i class="fa-solid fa-user-group" aria-hidden="true"></i> Users</li>
+                <li data-page="loans"><i class="fa-solid fa-file-contract" aria-hidden="true"></i> Loans</li>
+                <li data-page="savings"><i class="fa-solid fa-piggy-bank" aria-hidden="true"></i> Savings</li>
+                <li data-page="fast-collection"><i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i> Fast Input</li>
+                <li data-page="complete-records"><i class="fa-solid fa-receipt" aria-hidden="true"></i> Complete Records</li>
+                <li data-page="reports"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i> Reports</li>
+                <li data-page="sync"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Sync Data</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navigation Bar -->
+            <header class="top-bar" role="banner">
+                <div class="page-title">
+                    <h2 id="current-page-title">Dashboard</h2>
+                </div>
+                <div class="user-profile" role="region" aria-label="User controls">
+                    <div class="online-status offline" id="connection-status" aria-label="Connection status" role="status">
+                        <i class="fa-solid fa-wifi" aria-hidden="true"></i> <span aria-label="Currently offline">Offline</span>
+                    </div>
+
+                    <!-- Profile Widget -->
+                    <div class="profile-widget" id="profile-widget">
+                        <button class="profile-trigger" id="profile-trigger" aria-label="Open profile menu" aria-expanded="false" aria-haspopup="menu">
+                            <img id="profile-avatar" src="https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&bold=true" alt="" class="profile-avatar-img">
+                            <span class="profile-name-short" id="profile-name-short">Admin</span>
+                            <i class="fa-solid fa-chevron-down profile-chevron" id="profile-chevron" aria-hidden="true"></i>
+                        </button>
+
+                        <!-- Dropdown Panel -->
+                        <div class="profile-dropdown" id="profile-dropdown" role="menu" aria-label="Profile menu">
+                            <div class="profile-dropdown-header">
+                                <img id="dropdown-avatar" src="https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&bold=true&size=64" alt="" class="dropdown-avatar">
+                                <div class="dropdown-user-info">
+                                    <p class="dropdown-name" id="dropdown-name">Admin</p>
+                                    <p class="dropdown-email" id="dropdown-email">—</p>
+                                    <span class="dropdown-role-badge"><i class="fa-solid fa-shield-halved"></i> Administrator</span>
+                                </div>
+                            </div>
+
+                            <div class="profile-dropdown-divider"></div>
+
+                            <div class="profile-meta-list">
+                                <div class="profile-meta-item">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <span>Logged in: <strong id="login-time-display">—</strong></span>
+                                </div>
+                                <div class="profile-meta-item">
+                                    <i class="fa-solid fa-database"></i>
+                                    <span>Storage: <strong id="storage-display">Local</strong></span>
+                                </div>
+                                <div class="profile-meta-item">
+                                    <i class="fa-solid fa-circle-check" style="color:var(--success)"></i>
+                                    <span>Session: <strong style="color:var(--success)">Active</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="profile-dropdown-divider"></div>
+
+                            <button class="profile-logout-btn" id="logout-btn" role="menuitem">
+                                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Views -->
+            <div id="view-container" class="view-container">
+                <!-- Views will be injected here by JS -->
+            </div>
+        </main>
+
+
+    </div>
+
+    <!-- Floating Settings Menu (Mobile Dashboard Only) -->
+    <div class="floating-menu" id="floating-menu">
+        <button class="floating-menu-item" data-page="reports" aria-label="Go to Reports">
+            <i class="fa-solid fa-file-invoice"></i>
+            <span>Reports</span>
+        </button>
+        <button class="floating-menu-item" data-page="sync" aria-label="Sync Data">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Sync Data</span>
+        </button>
+    </div>
+
+    <!-- Floating Settings Button (Mobile Dashboard Only) -->
+    <button id="floating-settings-btn" aria-label="Settings and more options" aria-expanded="false" aria-controls="floating-menu">
+        <i class="fa-solid fa-cog"></i>
+    </button>
+
+    <!-- Floating Action Button for Add -->
+    <button class="fab" id="fab-add" style="display: none;" aria-label="Add new item">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- Local Library Scripts (Offline) -->
+    <script src="lib/chartjs/chart.min.js"></script>
+    <script src="lib/sweetalert2/sweetalert2.min.js"></script>
+    <script src="lib/jspdf/jspdf.umd.min.js"></script>
+    <script src="lib/jspdf/jspdf.plugin.autotable.min.js"></script>
+    <script src="lib/html2canvas/html2canvas.min.js"></script>
+    
+    <!-- Library Manager - Coordinates loading -->
+    <script src="js/library-manager.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="js/currency-formatter.js"></script>
+    <script src="js/pdf-generator.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/service-worker-register.js"></script>
+</body>
+
+</html>

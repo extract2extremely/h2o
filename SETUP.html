@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinCollect - Setup Required</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1e40af;
+        }
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #8b5cf6;
+        }
+        .steps li:before {
+            content: counter(step-counter);
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+        .code-box {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .button-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .button-secondary {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+        .button-secondary:hover {
+            background: #e5e7eb;
+        }
+        .success-box {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #166534;
+            line-height: 1.6;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+        .option {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .option-title {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        .option-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ FinCollect - Setup Required</h1>
+            <p>Your application needs to be run on a local web server</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-title">🚨 Why Am I Seeing This?</div>
+                <div class="info-box">
+                    <strong>You're opening the file directly (file:// protocol)</strong>, which causes browser security restrictions. 
+                    FinCollect needs to run on a <strong>local web server (HTTP)</strong> to work properly.
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">✅ Quick Setup</div>
+                
+                <div class="option">
+                    <div class="option-title">🪟 Windows (Easiest)</div>
+                    <div class="option-desc">
+                        Double-click the <strong>start-server.bat</strong> file in your FinCollect folder<br>
+                        The browser will open automatically at http://localhost:8000
+                    </div>
+                </div>
+
+                <div class="option">
+                    <div class="option-title">🍎 macOS / 🐧 Linux</div>
+                    <div class="option-desc">
+                        Open Terminal and run:
+                        <div class="code-box">cd /path/to/Gravity<br>python3 server.py</div>
+                        Then open: <strong>http://localhost:8000</strong>
+                    </div>
+                </div>
+
+                <div class="option">
+                    <div class="option-title">🔧 Any OS - Python One-Liner</div>
+                    <div class="option-desc">
+                        <div class="code-box">python -m http.server 8000 --directory /path/to/Gravity</div>
+                        Then open: <strong>http://localhost:8000</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📖 Step-by-Step Setup</div>
+                <ol class="steps">
+                    <li>
+                        <strong>Locate your FinCollect folder</strong><br>
+                        Default: H:\Gravity (Windows) or ~/Gravity (Mac/Linux)
+                    </li>
+                    <li>
+                        <strong>Choose your method:</strong>
+                        <ul style="margin-top: 10px; margin-left: 20px;">
+                            <li><strong>Windows:</strong> Double-click start-server.bat</li>
+                            <li><strong>Python:</strong> Run server.py or python -m http.server</li>
+                            <li><strong>VS Code:</strong> Use Live Server extension</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Open your browser</strong> to:<br>
+                        <div class="code-box">http://localhost:8000</div>
+                    </li>
+                    <li>
+                        <strong>✅ Done!</strong> App runs without errors
+                    </li>
+                </ol>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎯 What Gets Fixed</div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 2px solid #e5e7eb;">
+                        <th style="text-align: left; padding: 10px; background: #f9fafb;">Issue</th>
+                        <th style="text-align: center; padding: 10px; background: #f9fafb;">file://</th>
+                        <th style="text-align: center; padding: 10px; background: #f9fafb;">HTTP</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">CORS Errors</td>
+                        <td style="text-align: center; padding: 10px;">❌</td>
+                        <td style="text-align: center; padding: 10px; color: #10b981; font-weight: 700;">✅</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">Font Loading</td>
+                        <td style="text-align: center; padding: 10px;">❌</td>
+                        <td style="text-align: center; padding: 10px; color: #10b981; font-weight: 700;">✅</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">Service Worker</td>
+                        <td style="text-align: center; padding: 10px;">❌</td>
+                        <td style="text-align: center; padding: 10px; color: #10b981; font-weight: 700;">✅</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">All Features</td>
+                        <td style="text-align: center; padding: 10px;">⚠️</td>
+                        <td style="text-align: center; padding: 10px; color: #10b981; font-weight: 700;">✅ Full</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🆘 Troubleshooting</div>
+                
+                <div class="info-box" style="background: #fef9c3; border-left-color: #f59e0b; color: #92400e;">
+                    <strong>Python not found?</strong><br>
+                    Install Python from https://www.python.org/downloads/<br>
+                    Make sure to check "Add Python to PATH" during installation
+                </div>
+
+                <div class="info-box" style="background: #fef9c3; border-left-color: #f59e0b; color: #92400e;">
+                    <strong>Port 8000 already in use?</strong><br>
+                    Use a different port: <code style="background: #fff5d6; padding: 2px 6px; border-radius: 3px;">python -m http.server 8080</code>
+                </div>
+
+                <div class="info-box" style="background: #fef9c3; border-left-color: #f59e0b; color: #92400e;">
+                    <strong>Still having issues?</strong><br>
+                    Read: <strong>SERVER_SETUP_GUIDE.md</strong> in your FinCollect folder
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>✅ After Setup</strong><br>
+                • No console errors<br>
+                • All fonts display properly<br>
+                • PDF downloads work<br>
+                • Offline features enabled<br>
+                • Professional appearance<br>
+                • Full functionality
+            </div>
+
+            <div class="button-group">
+                <a href="#" class="button button-primary" onclick="alert('Follow the steps above to set up your server, then reload at http://localhost:8000'); return false;">
+                    📖 Read Setup Guide
+                </a>
+                <a href="SERVER_SETUP_GUIDE.md" class="button button-secondary">
+                    📚 Full Documentation
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>FinCollect v1.0</strong> | Need a web server to run properly</p>
+            <p style="margin-top: 5px;">Once set up, run at: <strong>http://localhost:8000</strong></p>
+        </div>
+    </div>
+</body>
+</html>
