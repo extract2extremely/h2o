@@ -6829,693 +6829,399 @@ ${styles}
     }
   }
   async renderReports() {
-    this.setTitle("Reports & Analytics");
+    this.setTitle("Database Management & Backups");
 
     this.hideFab();
 
+    // Fetch all database collections for statistics
     const loans = await window.db.getAll("loans");
     const borrowers = await window.db.getAll("borrowers");
     const savings = await window.db.getAll("savings");
     const savingsTypes = await window.db.getAll("savingsTypes");
     const savingsTransactions = await window.db.getAll("savingsTransactions");
+    const transactions = await window.db.getAll("transactions");
+    const syncQueue = await window.db.getAll("syncQueue");
 
-    const calcStats = (freq) => {
-      const filtered = loans.filter(
-        (l) => l.frequency === freq || (freq === "Daily" && !l.frequency),
-      );
 
-      const total = filtered.reduce((s, l) => s + parseFloat(l.totalAmount), 0);
-      const paid = filtered.reduce((s, l) => s + parseFloat(l.paidAmount), 0);
-      const balance = total - paid;
-
-      return { total, paid, balance };
+    // Calculate data size helper function
+    const formatBytes = (bytes) => {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const daily = calcStats("Daily");
-    const weekly = calcStats("Weekly");
-    const monthly = calcStats("Monthly");
-
-    const renderGraphTab = () => {
-      const renderSection = (title, data, color) => `
-<div style="margin-bottom: 3rem;">
-  <h3 style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
-    <span style="display:inline-block; width:12px; height:12px; background:${color};"></span> ${title}
-  </h3>
-  <div class="card" style="height:300px; position:relative;">
-    <canvas id="chart-${title}"></canvas>
-  </div>
-  <div class="grid-3" style="margin-top:1rem;">
-    <div class="card" style="text-align:center; padding:1rem;">
-      <small style="color:var(--text-muted)">Total</small>
-      <div style="font-weight:700; font-size:1.1rem;"><i class='fi fi-sr-bangladeshi-taka-sign'></i>${data.total.toLocaleString()}</div>
-    </div>
-    <div class="card" style="text-align:center; padding:1rem;">
-      <small style="color:var(--text-muted)">Paid</small>
-      <div style="font-weight:700; font-size:1.1rem; color:var(--success);"><i class='fi fi-sr-bangladeshi-taka-sign'></i>${data.paid.toLocaleString()}</div>
-    </div>
-    <div class="card" style="text-align:center; padding:1rem;">
-      <small style="color:var(--text-muted)">Balance</small>
-      <div style="font-weight:700; font-size:1.1rem; color:var(--danger);"><i class='fi fi-sr-bangladeshi-taka-sign'></i>${data.balance.toLocaleString()}</div>
-    </div>
-  </div>
-</div>`;
-
-      return `
-${renderSection("Daily Collections", daily, "#2563eb")}
-${renderSection("Weekly Collections", weekly, "#84cc16")}
-${renderSection("Monthly Collections", monthly, "#f59e0b")}`;
+    const calculateSize = (data) => {
+      return formatBytes(JSON.stringify(data).length);
     };
 
-    const renderDetailedTab = () => {
-      const borrowerMap = borrowers.reduce((acc, b) => {
-        acc[b.id] = b;
-        return acc;
-      }, {});
+    // Calculate statistics with sizes
+    const stats = {
+      borrowers: borrowers.length,
+      borrowersSize: calculateSize(borrowers),
+      loans: loans.length,
+      loansSize: calculateSize(loans),
+      savings: savingsTypes.length,
+      savingsSize: calculateSize(savingsTypes),
+      savingsAccounts: savings.length,
+      savingsAccountsSize: calculateSize(savings),
+      savingsTransactions: savingsTransactions.length,
+      savingsTransactionsSize: calculateSize(savingsTransactions),
+      transactions: transactions.length,
+      transactionsSize: calculateSize(transactions),
+      syncQueue: syncQueue.length,
+      totalLoans: loans.reduce((sum, l) => sum + parseFloat(l.totalAmount || 0), 0),
+      totalReceived: loans.reduce((sum, l) => sum + parseFloat(l.paidAmount || 0), 0),
+      totalSavings: savingsTransactions.reduce((sum, st) => sum + parseFloat(st.amount || 0), 0),
+      totalDatabaseSize: calculateSize([...borrowers, ...loans, ...savings, ...savingsTypes, ...savingsTransactions, ...transactions, ...syncQueue])
+    };
 
-      // Extract all received transactions from installment schedules
-      let allTransactions = [];
-      loans.forEach(loan => {
-        if (loan.schedule && Array.isArray(loan.schedule)) {
-          loan.schedule.forEach(installment => {
-            if (installment.receivedBy && installment.paidAmount > 0) {
-              allTransactions.push({
-                id: `${loan.id}-${installment.no}`,
-                type: 'Loan',
-                borrowerName: borrowerMap[loan.borrowerId]?.name || 'Unknown',
-                borrowerId: loan.borrowerId,
-                amount: parseFloat(installment.paidAmount || 0),
-                date: installment.paidDate || installment.dueDate,
-                receivedBy: installment.receivedBy,
-                installmentNo: installment.no,
-                loanId: loan.id,
-                frequency: loan.frequency || 'Daily'
-              });
-            }
-          });
-        }
-      });
+    const statisticsHTML = `
+<style>
+  .stat-card-title { font-size: 0.75rem; }
+  .stat-card-number { font-size: 2rem; }
+  .stat-card-subtitle { font-size: 0.875rem; }
+  .stat-card-size { font-size: 0.75rem; }
+  .stat-card-icon { width: 60px; height: 60px; font-size: 1.75rem; }
+  .stat-card-container { padding: 1.5rem; gap: 1rem; }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+  .backup-section { padding: 2rem; gap: 2rem; }
+  .backup-header { font-size: 1.5rem; gap: 1rem; margin-bottom: 2rem; }
+  .backup-icon { width: 50px; height: 50px; font-size: 1.5rem; }
+  .export-icon { font-size: 3rem; }
+  .export-title { font-size: 1.1rem; }
+  .export-desc { font-size: 0.875rem; }
+  .backup-btn { padding: 0.75rem 1.5rem; font-size: 0.875rem; }
+  .info-section { padding: 1.25rem; font-size: 0.875rem; }
 
-      // Sort transactions by date (newest first)
-      allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+  /* Tablet (768px and below) */
+  @media (max-width: 768px) {
+    .stat-card-title { font-size: 0.7rem; }
+    .stat-card-number { font-size: 1.5rem; }
+    .stat-card-subtitle { font-size: 0.8rem; }
+    .stat-card-size { font-size: 0.65rem; }
+    .stat-card-icon { width: 50px; height: 50px; font-size: 1.3rem; }
+    .stat-card-container { padding: 1.25rem; gap: 0.75rem; }
+    .stat-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+    .backup-section { padding: 1.5rem; gap: 1.5rem; }
+    .backup-header { font-size: 1.2rem; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .backup-icon { width: 45px; height: 45px; font-size: 1.2rem; }
+    .export-icon { font-size: 2.5rem; }
+    .export-title { font-size: 1rem; }
+    .export-desc { font-size: 0.8rem; }
+    .backup-btn { padding: 0.65rem 1.25rem; font-size: 0.8rem; }
+    .info-section { padding: 1rem; font-size: 0.8rem; }
+  }
 
-      // Calculate summary
-      const totalReceived = allTransactions.reduce((sum, t) => sum + t.amount, 0);
-      const uniqueTransactionDays = new Set(allTransactions.map(t => t.date)).size;
-      const uniqueBorrowers = new Set(allTransactions.map(t => t.borrowerId)).size;
+  /* Mobile (480px and below) */
+  @media (max-width: 480px) {
+    .stat-card-title { font-size: 0.65rem; }
+    .stat-card-number { font-size: 1.25rem; }
+    .stat-card-subtitle { font-size: 0.75rem; }
+    .stat-card-size { font-size: 0.6rem; }
+    .stat-card-icon { width: 45px; height: 45px; font-size: 1.1rem; }
+    .stat-card-container { padding: 1rem; gap: 0.5rem; }
+    .stat-grid { grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+    .backup-section { padding: 1.25rem; gap: 1.25rem; }
+    .backup-section > div:not(:first-child) { grid-template-columns: 1fr !important; }
+    .backup-header { font-size: 1.1rem; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .backup-icon { width: 40px; height: 40px; font-size: 1rem; }
+    .export-icon { font-size: 2rem; }
+    .export-title { font-size: 0.9rem; }
+    .export-desc { font-size: 0.75rem; }
+    .backup-btn { padding: 0.6rem 1rem; font-size: 0.75rem; }
+    .info-section { padding: 0.875rem; font-size: 0.75rem; }
+  }
+</style>
 
-      // Get unique "Received By" names
-      const uniqueReceivedBy = [...new Set(allTransactions.map(t => t.receivedBy))].sort();
-
-      return `
-<div style="margin-bottom: 2rem;">
-  <!-- Summary Cards -->
-  <div class="grid-3" style="margin-bottom: 2rem;">
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #10b981; background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);">
-      <small style="color: #6b7280; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Total Received</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #10b981;">৳${totalReceived.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;"><i class="fa-solid fa-receipt" style="margin-right: 0.25rem;"></i>${allTransactions.length} Transactions</small>
+<div style="width: 100%; margin: 0;">
+  <!-- Statistics Grid - Responsive -->
+  <div class="stat-grid" style="display: grid;">
+    
+    <!-- Borrowers/Users Card -->
+    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 5px solid #3b82f6; border-radius: 12px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(59, 130, 246, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Active Users</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #3b82f6; margin: 0.5rem 0; line-height: 1;">${stats.borrowers}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-user-group" style="margin-right: 0.5rem;"></i>Registered</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.borrowersSize}</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #3b82f6; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);">
-      <small style="color: #6b7280; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Collection Days</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #3b82f6;">${uniqueTransactionDays}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;"><i class="fa-solid fa-calendar" style="margin-right: 0.25rem;"></i>Unique Days</small>
+
+    <!-- Loans Card -->
+    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #e0fce8 100%); border-left: 5px solid #10b981; border-radius: 12px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(16, 185, 129, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(16, 185, 129, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Total Loans</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #10b981; margin: 0.5rem 0; line-height: 1;">${stats.loans}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-bangladeshi-taka-sign" style="margin-right: 0.25rem;"></i>${stats.totalLoans.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.loansSize}</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-file-contract"></i>
+        </div>
+      </div>
     </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #8b5cf6; background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);">
-      <small style="color: #6b7280; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Borrowers</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #8b5cf6;">${uniqueBorrowers}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;"><i class="fa-solid fa-users" style="margin-right: 0.25rem;"></i>Paid</small>
+
+    <!-- Savings Card -->
+    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; border-radius: 12px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(245, 158, 11, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(245, 158, 11, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Savings Plans</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #d97706; margin: 0.5rem 0; line-height: 1;">${stats.savings}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-piggy-bank" style="margin-right: 0.25rem;"></i>${stats.savingsAccounts} active</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.savingsSize}</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-piggy-bank"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Card -->
+    <div style="background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%); border-left: 5px solid #8b5cf6; border-radius: 12px; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(139, 92, 246, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(139, 92, 246, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Transactions</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #8b5cf6; margin: 0.5rem 0; line-height: 1;">${stats.transactions}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-bangladeshi-taka-sign" style="margin-right: 0.25rem;"></i>${stats.totalReceived.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.transactionsSize}</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-exchange"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Savings Transactions Card -->
+    <div style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); border-left: 5px solid #ec4899; border-radius: 12px; box-shadow: 0 2px 8px rgba(236, 72, 153, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(236, 72, 153, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(236, 72, 153, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Savings Saved</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #ec4899; margin: 0.5rem 0; line-height: 1;">${stats.savingsTransactions}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-bangladeshi-taka-sign" style="margin-right: 0.25rem;"></i>${stats.totalSavings.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.savingsTransactionsSize}</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-calculator"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Database Size Card -->
+    <div style="background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%); border-left: 5px solid #0ea5e9; border-radius: 12px; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1); transition: all 300ms ease; cursor: pointer;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(14, 165, 233, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(14, 165, 233, 0.1)'">
+      <div class="stat-card-container" style="display: flex; align-items: flex-start; justify-content: space-between;">
+        <div style="flex: 1;">
+          <p class="stat-card-title" style="font-weight: 700; text-transform: uppercase; color: #6b7280; letter-spacing: 0.5px; margin: 0 0 0.5rem 0;">Database Size</p>
+          <p class="stat-card-number" style="font-weight: 800; color: #0ea5e9; margin: 0.5rem 0; line-height: 1;">${stats.totalDatabaseSize}</p>
+          <p class="stat-card-subtitle" style="color: #6b7280; margin: 0.5rem 0 0 0;"><i class="fa-solid fa-database" style="margin-right: 0.25rem;"></i>Total stored</p>
+          <p class="stat-card-size" style="color: #9ca3af; margin: 0.25rem 0 0 0;">${stats.borrowers + stats.loans + stats.savings + stats.transactions + stats.savingsTransactions} records</p>
+        </div>
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); flex-shrink: 0;">
+          <i class="fa-solid fa-database"></i>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Search & Filter Section -->
-  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%); border: 1px solid #e5e7eb;">
-    <!-- Search & Date Row -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem;">
-      <div style="position: relative;">
-        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-search" style="margin-right: 0.5rem;"></i>Search Borrower
-        </label>
-        <input type="text" id="transaction-search" placeholder="Search by name..." style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; transition: all 200ms ease; background: white;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+  <!-- Backup & Restore Section -->
+  <div class="backup-section" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 2px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; display: flex; flex-direction: column;">
+    <div class="backup-header" style="display: flex; align-items: center;">
+      <div class="backup-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+        <i class="fa-solid fa-floppy-disk"></i>
       </div>
-      <div>
-        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-calendar-days" style="margin-right: 0.5rem;"></i>Filter by Date
-        </label>
-        <input type="date" id="transaction-date-filter" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; cursor: pointer; background: white; transition: all 200ms ease;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#d1d5db'">
+      <h3 style="font-weight: 700; color: #1f2937; margin: 0;">Database Backup & Restore</h3>
+    </div>
+
+    <!-- Backup/Restore Buttons Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      <!-- Export Button -->
+      <div style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(14, 165, 233, 0.02) 100%); border: 2px dashed #0ea5e9; border-radius: 14px; padding: 2rem; text-align: center; transition: all 300ms ease;" id="export-section" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 16px rgba(14, 165, 233, 0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+        <div class="export-icon" style="color: #0ea5e9; margin-bottom: 1rem; line-height: 1;">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+        </div>
+        <h4 class="export-title" style="font-weight: 700; color: #1f2937; margin: 0.5rem 0;">Export Complete Backup</h4>
+        <p class="export-desc" style="color: #6b7280; margin: 0.5rem 0 1.5rem 0;">Download all database records as a JSON file</p>
+        <button id="export-btn" class="backup-btn" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(14, 165, 233, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(14, 165, 233, 0.3)'">
+          <i class="fa-solid fa-download" style="margin-right: 0.5rem;"></i> Export Now
+        </button>
       </div>
-      <div style="display: flex; align-items: flex-end;">
-        <button id="reset-filters" style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; font-size: 0.875rem; height: 42px; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px); this.style.boxShadow='0 8px 16px rgba(99, 102, 241, 0.3)'" onmouseout="this.style.transform='translateY(0); this.style.boxShadow='none'">
-          <i class="fa-solid fa-rotate-left" style="margin-right: 0.5rem;"></i> Reset
+
+      <!-- Import Button -->
+      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%); border: 2px dashed #10b981; border-radius: 14px; padding: 2rem; text-align: center; transition: all 300ms ease;" id="import-section" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 16px rgba(16, 185, 129, 0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+        <div class="export-icon" style="color: #10b981; margin-bottom: 1rem; line-height: 1;">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <h4 class="export-title" style="font-weight: 700; color: #1f2937; margin: 0.5rem 0;">Restore from Backup</h4>
+        <p class="export-desc" style="color: #6b7280; margin: 0.5rem 0 1.5rem 0;">Upload a backup file to restore all database records</p>
+        <input type="file" id="import-file" accept=".json,.backup" style="display: none;">
+        <button id="import-btn" class="backup-btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+          <i class="fa-solid fa-upload" style="margin-right: 0.5rem;"></i> Select File
         </button>
       </div>
     </div>
 
-    <!-- "Received By" Filter Buttons -->
-    <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-      <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem;">
-        <i class="fa-solid fa-filter" style="margin-right: 0.5rem;"></i>Filter by Received By
-      </label>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-        <button class="received-by-filter" data-filter="all" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 200ms ease; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);">
-          <i class="fa-solid fa-asterisk" style="margin-right: 0.25rem;"></i> All (${allTransactions.length})
-        </button>
-        ${uniqueReceivedBy.map(name => {
-          const count = allTransactions.filter(t => t.receivedBy === name).length;
-          const colors = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#ea580c', '#7c3aed', '#06b6d4'];
-          const randomColor = colors[Math.abs(name.charCodeAt(0)) % colors.length];
-          return `<button class="received-by-filter" data-filter="${name}" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, ${randomColor}22 0%, ${randomColor}11 100%); color: ${randomColor}; border: 1px solid ${randomColor}44; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 200ms ease;">
-            ${name} (${count})
-          </button>`;
-        }).join('')}
-      </div>
-    </div>
-  </div>
-
-  <!-- Transaction Table -->
-  <div class="card" style="overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <div style="overflow-x: auto;">
-      <div id="transaction-table-container">
-        <!-- Table will be rendered here by JavaScript -->
-      </div>
+    <!-- Info Section -->
+    <div class="info-section" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.02) 100%); border-left: 4px solid #f59e0b; border-radius: 8px; display: flex; gap: 1rem;">
+      <i class="fa-solid fa-circle-info" style="color: #d97706; flex-shrink: 0; margin-top: 0.125rem;"></i>
+      <p style="margin: 0; color: #92400e;">
+        <strong>Important:</strong> Backups include all your users, loans, savings, and transaction data. Import will merge with existing data. Always keep backups in a safe location.
+      </p>
     </div>
   </div>
 </div>
+    `;
 
-<script>
-(function() {
-  const allTransactionsData = ${JSON.stringify(allTransactions)};
-  const tableContainer = document.getElementById('transaction-table-container');
-  const searchInput = document.getElementById('transaction-search');
-  const dateFilter = document.getElementById('transaction-date-filter');
-  const resetBtn = document.getElementById('reset-filters');
-  const receivedByFilters = document.querySelectorAll('.received-by-filter');
-  
-  let activeReceivedByFilter = 'all';
+    this.container.innerHTML = statisticsHTML;
 
-  const renderTable = (transactions) => {
-    if (transactions.length === 0) {
-      return '<div style="padding: 3rem 2rem; text-align: center; color: #9ca3af;"><i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i><p style="font-size: 1rem; font-weight: 500;">No transactions found</p></div>';
+    // Attach export event handler
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', async () => {
+        try {
+          exportBtn.disabled = true;
+          exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Exporting...';
+          
+          const backup = {
+            timestamp: new Date().toISOString(),
+            version: '1.0',
+            collections: {
+              borrowers: await window.db.getAll('borrowers'),
+              loans: await window.db.getAll('loans'),
+              savings: await window.db.getAll('savings'),
+              savingsTypes: await window.db.getAll('savingsTypes'),
+              savingsTransactions: await window.db.getAll('savingsTransactions'),
+              transactions: await window.db.getAll('transactions'),
+              syncQueue: await window.db.getAll('syncQueue')
+            }
+          };
+
+          const jsonString = JSON.stringify(backup, null, 2);
+          const blob = new Blob([jsonString], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `fincollect-backup-${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = '<i class="fa-solid fa-download" style="margin-right: 0.5rem;"></i> Export Now';
+
+          Swal.fire({
+            title: 'Export Successful!',
+            text: 'Your complete database backup has been downloaded.',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0ea5e9'
+          });
+        } catch (error) {
+          console.error('Export error:', error);
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = '<i class="fa-solid fa-download" style="margin-right: 0.5rem;"></i> Export Now';
+          Swal.fire({
+            title: 'Export Failed',
+            text: error.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      });
     }
 
-    let rows = '';
-    transactions.forEach((transaction, index) => {
-      const dateObj = new Date(transaction.date);
-      const dateStr = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-      const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const bgStyle = index % 2 === 0 ? 'background: rgba(248, 250, 252, 0.3);' : '';
-      const onMouseOutStyle = index % 2 === 0 ? 'rgba(248, 250, 252, 0.3)' : 'transparent';
-      const amount = transaction.amount.toLocaleString('en-US', {minimumFractionDigits: 2});
-      const receivedByFirstChar = transaction.receivedBy.charAt(0).toUpperCase();
+    // Attach import event handler
+    const importBtn = document.getElementById('import-btn');
+    const importFile = document.getElementById('import-file');
+    if (importBtn && importFile) {
+      importBtn.addEventListener('click', () => importFile.click());
       
-      rows += '<tr style="border-bottom: 1px solid #f3f4f6; transition: background 200ms ease; ' + bgStyle + '" onmouseover="this.style.background=\'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%)\'" onmouseout="this.style.background=\'' + onMouseOutStyle + '\'">\n';
-      rows += '  <td style="padding: 1rem; font-weight: 500; color: #1f2937; border-right: 1px solid #e5e7eb;">' + transaction.borrowerName + '</td>\n';
-      rows += '  <td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;">\n';
-      rows += '    <span style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; display: inline-block;">\n';
-      rows += '      <i class="fa-solid fa-file-invoice" style="margin-right: 0.25rem;"></i>' + transaction.type + '\n';
-      rows += '    </span>\n';
-      rows += '  </td>\n';
-      rows += '  <td style="padding: 1rem; text-align: center; color: #475569; font-size: 0.875rem; border-right: 1px solid #e5e7eb;">\n';
-      rows += '    <div style="font-weight: 500;">' + dateStr + '</div>\n';
-      rows += '    <small style="color: #9ca3af;">' + timeStr + '</small>\n';
-      rows += '  </td>\n';
-      rows += '  <td style="padding: 1rem; text-align: right; color: #10b981; font-weight: 700; font-size: 1rem; border-right: 1px solid #e5e7eb;">৳' + amount + '</td>\n';
-      rows += '  <td style="padding: 1rem; text-align: center; color: #1f2937; font-weight: 500;">\n';
-      rows += '    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">\n';
-      rows += '      <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 700;">' + receivedByFirstChar + '</div>\n';
-      rows += '      <span>' + transaction.receivedBy + '</span>\n';
-      rows += '    </div>\n';
-      rows += '  </td>\n';
-      rows += '</tr>\n';
-    });
+      importFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    return '<table style="width: 100%; border-collapse: collapse;">\n' +
-      '  <thead>\n' +
-      '    <tr style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-bottom: 2px solid #d1d5db; position: sticky; top: 0; z-index: 10;">\n' +
-      '      <th style="padding: 1rem; text-align: left; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Borrower</th>\n' +
-      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Type</th>\n' +
-      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Date & Time</th>\n' +
-      '      <th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Amount</th>\n' +
-      '      <th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">Received By</th>\n' +
-      '    </tr>\n' +
-      '  </thead>\n' +
-      '  <tbody>\n' +
-      rows +
-      '  </tbody>\n' +
-      '</table>';
-  };
+        try {
+          const text = await file.text();
+          const backup = JSON.parse(text);
 
-  const updateTable = () => {
-    const searchTerm = searchInput.value.toLowerCase();
-    const filterDate = dateFilter.value;
-    
-    let filtered = allTransactionsData;
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(t => 
-        t.borrowerName.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    // Apply date filter
-    if (filterDate) {
-      filtered = filtered.filter(t => t.date === filterDate);
-    }
-
-    // Apply "Received By" filter
-    if (activeReceivedByFilter !== 'all') {
-      filtered = filtered.filter(t => t.receivedBy === activeReceivedByFilter);
-    }
-
-    tableContainer.innerHTML = renderTable(filtered);
-  };
-
-  // Event listeners
-  searchInput.addEventListener('input', updateTable);
-  dateFilter.addEventListener('change', updateTable);
-  resetBtn.addEventListener('click', () => {
-    searchInput.value = '';
-    dateFilter.value = '';
-    activeReceivedByFilter = 'all';
-    receivedByFilters.forEach(btn => {
-      btn.style.background = btn.dataset.filter === 'all' 
-        ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
-        : 'linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%)';
-      btn.style.opacity = btn.dataset.filter === 'all' ? '1' : '0.6';
-    });
-    updateTable();
-  });
-
-  receivedByFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeReceivedByFilter = btn.dataset.filter;
-      receivedByFilters.forEach(b => {
-        b.style.background = b.dataset.filter === activeReceivedByFilter
-          ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
-          : 'linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.05) 100%)';
-        b.style.color = b.dataset.filter === activeReceivedByFilter ? 'white' : 'inherit';
-        b.style.borderColor = b.dataset.filter === activeReceivedByFilter ? '#3b82f6' : '#cbd5e1';
-      });
-      updateTable();
-    });
-  });
-
-  // Initial render
-  updateTable();
-})();
-</script>`;;
-    };
-
-    const renderDataTab = () => {
-      const borrowerMap = borrowers.reduce((acc, b) => {
-        acc[b.id] = b;
-        return acc;
-      }, {});
-
-      const savingsTypeMap = savingsTypes.reduce((acc, st) => {
-        acc[st.id] = st;
-        return acc;
-      }, {});
-
-      const savingsTransactionMap = savingsTransactions.reduce((acc, st) => {
-        if (!acc[st.savingsId]) acc[st.savingsId] = [];
-        acc[st.savingsId].push(st);
-        return acc;
-      }, {});
-
-      // Calculate loan statistics
-      const loanStats = loans.map(loan => {
-        const borrower = borrowerMap[loan.borrowerId] || { name: 'Unknown' };
-        const totalReceived = (loan.schedule || []).filter(i => i.paidAmount).reduce((sum, i) => sum + parseFloat(i.paidAmount || 0), 0);
-        const balance = parseFloat(loan.totalAmount || 0) - totalReceived;
-        const completion = loan.totalAmount > 0 ? ((totalReceived / parseFloat(loan.totalAmount)) * 100).toFixed(1) : 0;
-        
-        return {
-          id: loan.id,
-          type: 'Loan',
-          borrowerName: borrower.name,
-          borrowerId: loan.borrowerId,
-          mobile: borrower.mobile || 'N/A',
-          totalAmount: parseFloat(loan.totalAmount || 0),
-          received: totalReceived,
-          balance: balance,
-          completion: parseFloat(completion),
-          frequency: loan.frequency || 'Daily',
-          status: loan.status || 'Active',
-          installments: (loan.schedule || []).length,
-          startDate: loan.startDate
-        };
-      });
-
-      // Calculate savings statistics
-      const savingsStats = savings.map(sav => {
-        const savType = savingsTypeMap[sav.savingsTypeId] || { name: 'Unknown' };
-        const transactions = savingsTransactionMap[sav.id] || [];
-        const totalSaved = transactions.length * (sav.amount || 0);
-        
-        return {
-          id: sav.id,
-          type: 'Savings',
-          borrowerName: 'Saver ID: ' + sav.userId,
-          userId: sav.userId,
-          savingsType: savType.name,
-          frequency: sav.frequency || 'Daily',
-          amount: parseFloat(sav.amount || 0),
-          totalSaved: totalSaved,
-          transactionCount: transactions.length,
-          status: sav.status || 'Active'
-        };
-      });
-
-      // Combine and sort all records
-      const allRecords = [...loanStats, ...savingsStats];
-      allRecords.sort((a, b) => {
-        const dateA = new Date(a.startDate || 0);
-        const dateB = new Date(b.startDate || 0);
-        return dateB - dateA;
-      });
-
-      const totalLoans = loanStats.length;
-      const totalLoanAmount = loanStats.reduce((sum, l) => sum + l.totalAmount, 0);
-      const totalLoanReceived = loanStats.reduce((sum, l) => sum + l.received, 0);
-      const totalSavings = savingsStats.length;
-      const totalSavedAmount = savingsStats.reduce((sum, s) => sum + s.totalSaved, 0);
-
-      // Store data globally for access after DOM insertion
-      window.completeRecordsData = {
-        allRecords: allRecords,
-        totalLoans: totalLoans,
-        totalLoanAmount: totalLoanAmount,
-        totalLoanReceived: totalLoanReceived,
-        totalSavings: totalSavings,
-        totalSavedAmount: totalSavedAmount
-      };
-
-      return `
-<div style="margin-bottom: 2rem;">
-  <!-- Summary Statistics -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-    <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border-left: 4px solid #3b82f6;">
-      <small style="color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Total Loans</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #3b82f6; margin-top: 0.5rem;">${totalLoans}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;">৳${totalLoanAmount.toLocaleString('en-US', {minimumFractionDigits: 0})}</small>
-    </div>
-    <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border-left: 4px solid #10b981;">
-      <small style="color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Total Received</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #10b981; margin-top: 0.5rem;">৳${totalLoanReceived.toLocaleString('en-US', {minimumFractionDigits: 0})}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;">${totalLoans > 0 ? ((totalLoanReceived / totalLoanAmount) * 100).toFixed(1) : 0}% collected</small>
-    </div>
-    <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%); border-left: 4px solid #8b5cf6;">
-      <small style="color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Total Savings</small>
-      <div style="font-size: 1.75rem; font-weight: 700; color: #8b5cf6; margin-top: 0.5rem;">${totalSavings}</div>
-      <small style="color: #9ca3af; display: block; margin-top: 0.5rem;">৳${totalSavedAmount.toLocaleString('en-US', {minimumFractionDigits: 0})}</small>
-    </div>
-  </div>
-
-  <!-- Filter & Search Section -->
-  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%); border: 1px solid #e5e7eb;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 1rem;">
-      <div>
-        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-search" style="margin-right: 0.5rem;"></i>Search
-        </label>
-        <input type="text" id="data-search" placeholder="Search by name, mobile..." style="width: 100%; padding: 0.75rem 1rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; transition: all 200ms ease; background: white;" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'" onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
-      </div>
-      <div>
-        <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-filter" style="margin-right: 0.5rem;"></i>Type
-        </label>
-        <select id="data-type-filter" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; cursor: pointer; background: white; transition: all 200ms ease;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#d1d5db'">
-          <option value="">All Records</option>
-          <option value="Loan">Loans Only</option>
-          <option value="Savings">Savings Only</option>
-        </select>
-      </div>
-      <div style="display: flex; align-items: flex-end;">
-        <button id="data-export-btn" style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; font-size: 0.875rem; height: 42px; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-          <i class="fa-solid fa-download" style="margin-right: 0.5rem;"></i> CSV
-        </button>
-      </div>
-      <div style="display: flex; align-items: flex-end;">
-        <button id="data-reset-btn" style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; font-size: 0.875rem; height: 42px; white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(99, 102, 241, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-          <i class="fa-solid fa-rotate-left" style="margin-right: 0.5rem;"></i> Reset
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Data Table -->
-  <div class="card" style="overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <div style="overflow-x: auto;">
-      <div id="data-table-container" style="min-height: 300px; text-align: center; padding: 2rem; color: #6b7280;">Loading table data...</div>
-    </div>
-  </div>
-</div>`;
-    };
-
-    this.container.innerHTML = `
-<div style="margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-  <div style="display: flex; gap: 0; position: relative;">
-    <button class="report-tab-btn" data-tab="graph" style="padding: 1rem 1.5rem; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border: none; cursor: pointer; font-weight: 600; flex: 1; max-width: 200px; border-radius: 8px 8px 0 0; transition: all 250ms ease;">
-      <i class="fa-solid fa-chart-bar" style="margin-right: 0.5rem;"></i> Analytics Graph
-    </button>
-    <button class="report-tab-btn" data-tab="details" style="padding: 1rem 1.5rem; background: transparent; color: #6b7280; border: none; cursor: pointer; font-weight: 600; flex: 1; max-width: 200px; transition: all 250ms ease;">
-      <i class="fa-solid fa-receipt" style="margin-right: 0.5rem;"></i> Transaction History
-    </button>
-    <button class="report-tab-btn" data-tab="data" style="padding: 1rem 1.5rem; background: transparent; color: #6b7280; border: none; cursor: pointer; font-weight: 600; flex: 1; max-width: 200px; transition: all 250ms ease;">
-      <i class="fa-solid fa-database" style="margin-right: 0.5rem;"></i> Complete Records
-    </button>
-  </div>
-</div>
-
-<div id="report-tab-graph" style="display: block;">
-  ${renderGraphTab()}
-</div>
-
-<div id="report-tab-details" style="display: none;">
-  ${renderDetailedTab()}
-</div>
-
-<div id="report-tab-data" style="display: none;">
-  ${renderDataTab()}
-</div>`;
-
-    // Tab switching functionality
-    const tabButtons = this.container.querySelectorAll('.report-tab-btn');
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tabName = btn.dataset.tab;
-        
-        // Hide all tabs
-        document.getElementById('report-tab-graph').style.display = 'none';
-        document.getElementById('report-tab-details').style.display = 'none';
-        document.getElementById('report-tab-data').style.display = 'none';
-        
-        // Show selected tab
-        document.getElementById(`report-tab-${tabName}`).style.display = 'block';
-        
-        // Update button styles
-        tabButtons.forEach(b => {
-          if (b.dataset.tab === tabName) {
-            b.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
-            b.style.color = 'white';
-          } else {
-            b.style.background = 'transparent';
-            b.style.color = '#6b7280';
-          }
-        });
-      });
-    });
-
-    // Initialize Complete Records table when tab is clicked or loaded
-    const initializeDataTable = () => {
-      if (!window.completeRecordsData) {
-        console.warn('No complete records data available');
-        return;
-      }
-
-      const { allRecords } = window.completeRecordsData;
-      const tableContainer = document.getElementById('data-table-container');
-      if (!tableContainer) return;
-
-      try {
-        const renderTable = (records) => {
-          if (!records || records.length === 0) {
-            return '<div style="padding: 3rem 2rem; text-align: center; color: #9ca3af;"><i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.5;"></i><p style="font-size: 1rem; font-weight: 500;">No records found</p></div>';
+          if (!backup.collections) {
+            throw new Error('Invalid backup file format');
           }
 
-          let html = '<table style="width: 100%; border-collapse: collapse;"><thead><tr style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-bottom: 2px solid #d1d5db;"><th style="padding: 1rem; text-align: left; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Name</th><th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Type</th><th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Frequency</th><th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Total</th><th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Received</th><th style="padding: 1rem; text-align: right; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Balance</th><th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid #e5e7eb;">Progress</th><th style="padding: 1rem; text-align: center; font-weight: 700; color: #1f2937; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">Status</th></tr></thead><tbody>';
-
-          records.forEach((record, index) => {
-            const bgColor = index % 2 === 0 ? 'rgba(248, 250, 252, 0.3)' : 'transparent';
-            const dotColor = record.type === 'Loan' ? '#3b82f6' : '#8b5cf6';
-            const typeBg = record.type === 'Loan' ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' : 'linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%)';
-            const typeColor = record.type === 'Loan' ? '#1e40af' : '#6d28d9';
-            const typeLabel = record.type === 'Loan' ? 'Loan' : 'Savings';
-            const statusColor = record.status === 'Active' ? '#10b981' : '#ef4444';
-            const statusBg = record.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-            const freqBg = record.type === 'Loan' ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
-            const freqColor = record.type === 'Loan' ? '#15803d' : '#92400e';
-            
-            html += '<tr style="border-bottom: 1px solid #f3f4f6; background: ' + bgColor + ';">';
-            html += '<td style="padding: 1rem; font-weight: 600; color: #1f2937; border-right: 1px solid #e5e7eb;"><span style="display: inline-block; width: 8px; height: 8px; background: ' + dotColor + '; border-radius: 50%; margin-right: 0.75rem;"></span>' + (record.borrowerName || 'N/A') + '</td>';
-            html += '<td style="padding: 1rem; color: #475569; text-align: center; border-right: 1px solid #e5e7eb;"><span style="background: ' + typeBg + '; color: ' + typeColor + '; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">' + typeLabel + '</span></td>';
-            html += '<td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;"><span style="background: ' + freqBg + '; color: ' + freqColor + '; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">' + (record.frequency || 'N/A') + '</span></td>';
-            
-            if (record.type === 'Loan') {
-              html += '<td style="padding: 1rem; text-align: right; color: #1f2937; font-weight: 600; border-right: 1px solid #e5e7eb;">৳' + (record.totalAmount || 0).toLocaleString('en-US') + '</td>';
-              html += '<td style="padding: 1rem; text-align: right; color: #10b981; font-weight: 600; border-right: 1px solid #e5e7eb;">৳' + (record.received || 0).toLocaleString('en-US') + '</td>';
-              html += '<td style="padding: 1rem; text-align: right; color: #ef4444; font-weight: 600; border-right: 1px solid #e5e7eb;">৳' + (record.balance || 0).toLocaleString('en-US') + '</td>';
-              const width = Math.min(100, (record.completion || 0));
-              html += '<td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;"><div style="width: 100px; height: 6px; background: #e5e7eb; border-radius: 9999px; overflow: hidden; margin: 0 auto;"><div style="height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); width: ' + width + '%;"></div></div><small style="color: #6b7280; margin-top: 0.25rem; display: block; font-weight: 500; font-size: 0.75rem;">' + record.completion + '%</small></td>';
-            } else {
-              html += '<td style="padding: 1rem; text-align: right; color: #1f2937; font-weight: 600; border-right: 1px solid #e5e7eb;">৳' + (record.amount || 0).toLocaleString('en-US') + '</td>';
-              html += '<td style="padding: 1rem; text-align: right; color: #10b981; font-weight: 600; border-right: 1px solid #e5e7eb;">৳' + (record.totalSaved || 0).toLocaleString('en-US') + '</td>';
-              html += '<td style="padding: 1rem; text-align: right; color: #ef4444; font-weight: 600; border-right: 1px solid #e5e7eb;">-</td>';
-              html += '<td style="padding: 1rem; text-align: center; border-right: 1px solid #e5e7eb;"><small style="color: #6b7280; font-weight: 600;">' + (record.transactionCount || 0) + ' txn</small></td>';
-            }
-            
-            html += '<td style="padding: 1rem; text-align: center;"><span style="background: ' + statusBg + '; color: ' + statusColor + '; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">' + (record.status || 'N/A') + '</span></td>';
-            html += '</tr>';
+          const result = await Swal.fire({
+            title: 'Restore Database?',
+            html: `<div style="text-align: left; margin: 1rem 0;">
+              <p><strong>This will merge backup data with your current database.</strong></p>
+              <p style="color: #6b7280; font-size: 0.875rem;">Data includes:</p>
+              <ul style="text-align: left; color: #6b7280; margin: 0.5rem 0 0 1rem;">
+                <li>${backup.collections.borrowers?.length || 0} Users</li>
+                <li>${backup.collections.loans?.length || 0} Loans</li>
+                <li>${backup.collections.savings?.length || 0} Savings Plans</li>
+                <li>${backup.collections.transactions?.length || 0} Transactions</li>
+              </ul>
+            </div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, Restore',
+            cancelButtonText: 'Cancel'
           });
 
-          html += '</tbody></table>';
-          return html;
-        };
-
-        const updateTable = () => {
-          const searchInput = document.getElementById('data-search');
-          const typeFilter = document.getElementById('data-type-filter');
-          const searchTerm = (searchInput?.value || '').toLowerCase();
-          const typeVal = typeFilter?.value || '';
-          
-          let filtered = allRecords;
-          
-          if (searchTerm) {
-            filtered = filtered.filter(r => 
-              (r.borrowerName || '').toLowerCase().includes(searchTerm) ||
-              (r.mobile || '').toLowerCase().includes(searchTerm)
-            );
+          if (!result.isConfirmed) {
+            importFile.value = '';
+            return;
           }
 
-          if (typeVal) {
-            filtered = filtered.filter(r => r.type === typeVal);
+          importBtn.disabled = true;
+          importBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Restoring...';
+
+          // Import all collections
+          const collections = ['borrowers', 'loans', 'savings', 'savingsTypes', 'savingsTransactions', 'transactions', 'syncQueue'];
+          for (const collectionName of collections) {
+            const items = backup.collections[collectionName] || [];
+            for (const item of items) {
+              await window.db.add(collectionName, item);
+            }
           }
 
-          tableContainer.innerHTML = renderTable(filtered);
-        };
+          importBtn.disabled = false;
+          importBtn.innerHTML = '<i class="fa-solid fa-upload" style="margin-right: 0.5rem;"></i> Select File';
+          importFile.value = '';
 
-        // Attach event listeners
-        const searchInput = document.getElementById('data-search');
-        const typeFilter = document.getElementById('data-type-filter');
-        const resetBtn = document.getElementById('data-reset-btn');
-        const exportBtn = document.getElementById('data-export-btn');
-
-        if (searchInput) searchInput.addEventListener('input', updateTable);
-        if (typeFilter) typeFilter.addEventListener('change', updateTable);
-        if (resetBtn) resetBtn.addEventListener('click', () => {
-          if (searchInput) searchInput.value = '';
-          if (typeFilter) typeFilter.value = '';
-          updateTable();
-        });
-
-        if (exportBtn) {
-          exportBtn.addEventListener('click', () => {
-            const searchTerm = (document.getElementById('data-search')?.value || '').toLowerCase();
-            const typeVal = document.getElementById('data-type-filter')?.value || '';
-            let filtered = allRecords;
-            if (searchTerm) {
-              filtered = filtered.filter(r => (r.borrowerName || '').toLowerCase().includes(searchTerm));
-            }
-            if (typeVal) {
-              filtered = filtered.filter(r => r.type === typeVal);
-            }
-            let csv = 'Name,Type,Frequency,Total,Received,Balance,Status\n';
-            filtered.forEach(record => {
-              if (record.type === 'Loan') {
-                csv += '"' + (record.borrowerName || '') + '","Loan","' + (record.frequency || '') + '",' + (record.totalAmount || 0) + ',' + (record.received || 0) + ',' + (record.balance || 0) + ',"' + (record.status || '') + '"\n';
-              } else {
-                csv += '"' + (record.borrowerName || '') + '","Savings","' + (record.frequency || '') + '",' + (record.amount || 0) + ',' + (record.totalSaved || 0) + ',0,"' + (record.status || '') + '"\n';
-              }
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'complete_records_' + new Date().toISOString().split('T')[0] + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+          Swal.fire({
+            title: 'Restore Complete!',
+            text: 'Your database has been successfully restored.',
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#10b981'
+          }).then(() => {
+            // Refresh the page to show updated stats
+            window.ui.renderReports();
+          });
+        } catch (error) {
+          console.error('Import error:', error);
+          importBtn.disabled = false;
+          importBtn.innerHTML = '<i class="fa-solid fa-upload" style="margin-right: 0.5rem;"></i> Select File';
+          importFile.value = '';
+          Swal.fire({
+            title: 'Import Failed',
+            text: error.message,
+            icon: 'error',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
           });
         }
-
-        // Initial render
-        updateTable();
-      } catch (err) {
-        console.error('Data table init error:', err, err.stack);
-        if (tableContainer) {
-          tableContainer.innerHTML = '<div style="padding: 2rem; color: #ef4444;">Error initializing table: ' + err.message + '</div>';
-        }
-      }
-    };
-
-    // Initialize on data tab click
-    const dataTabBtn = Array.from(this.container.querySelectorAll('.report-tab-btn')).find(btn => btn.dataset.tab === 'data');
-    if (dataTabBtn) {
-      dataTabBtn.addEventListener('click', () => {
-        setTimeout(initializeDataTable, 50);
       });
     }
-
-    // Initialize immediately
-    setTimeout(initializeDataTable, 100);
-
-    const createChart = (id, label, data, color) => {
-      const ctx = document.getElementById(id);
-
-      if (ctx) {
-        new Chart(ctx, {
-          type: "bar",
-
-          data: {
-            labels: ["Total", "Paid", "Balance"],
-
-            datasets: [
-              {
-                label: label,
-
-                data: [data.total, data.paid, data.balance],
-
-                backgroundColor: [color, "#22c55e", "#ef4444"],
-
-                barThickness: 40,
-
-                borderRadius: 4,
-              },
-            ],
-          },
-
-          options: {
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            plugins: { legend: { display: false } },
-
-            scales: { y: { beginAtZero: true } },
-          },
-        });
-      }
-    };
-
-    setTimeout(() => {
-      createChart("chart-Daily Collections", "Daily", daily, "#2563eb");
-
-      createChart("chart-Weekly Collections", "Weekly", weekly, "#84cc16");
-
-      createChart("chart-Monthly Collections", "Monthly", monthly, "#f59e0b");
-    }, 100);
   }
 
   async showPayModal(loanId) {
