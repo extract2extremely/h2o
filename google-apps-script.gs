@@ -16,6 +16,9 @@
 // Configuration
 const BACKUP_FOLDER_NAME = 'FinCollect Backups';
 const BACKUP_FILE_PREFIX = 'FinCollect-Backup';
+const SYNC_REGISTRY_FILE_NAME = 'FinCollect-Sync-Registry.json';
+const DEVICE_REGISTRY_FILE_NAME = 'FinCollect-Device-Registry.json';
+const SYNC_CHANGES_FILE_PREFIX = 'FinCollect-Sync-Changes';
 
 /**
  * Initialize Google Drive Backup Folder
@@ -300,6 +303,273 @@ function doGet(e) {
  * Accepts body as JSON string with Content-Type: text/plain
  * (avoids CORS preflight when called from file:// or localhost origins).
  */
+
+// ═══════════════════════════════════════════════════════════════════
+// NEW: SYNC REGISTRY FUNCTIONS (Multi-Device Sync)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Update sync metadata with device changes
+ * Central registry for tracking which devices have synced
+ */
+function updateSyncMetadata(deviceId, deviceName, changes, timestamp) {
+  try {
+    const folder = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME).next();
+    
+    // Get or create sync registry file
+    let syncRegistryFile = null;
+    const files = folder.getFilesByName(SYNC_REGISTRY_FILE_NAME);
+    
+    if (files.hasNext()) {
+      syncRegistryFile = files.next();
+    } else {
+      syncRegistryFile = folder.createFile(SYNC_REGISTRY_FILE_NAME, '{"devices": []}', MimeType.PLAIN_TEXT);
+    }
+
+    // Parse current registry
+    let registry = JSON.parse(syncRegistryFile.getBlob().getDataAsString());
+    if (!registry.devices) registry.devices = [];
+
+    // Find or create device entry
+    let deviceEntry = registry.devices.find(d => d.deviceId === deviceId);
+    
+    if (!deviceEntry) {
+      deviceEntry = {
+        deviceId: deviceId,
+        deviceName: deviceName,
+        firstSeen: timestamp,
+        syncHistory: []
+      };
+      registry.devices.push(deviceEntry);
+    }
+
+    // Update device metadata
+    deviceEntry.deviceName = deviceName;
+    deviceEntry.lastSync = timestamp;
+    deviceEntry.lastSyncChangeCount = changes.length;
+    
+    // Add to sync history
+    deviceEntry.syncHistory.push({
+      timestamp: timestamp,
+      changeCount: changes.length,
+      recordIds: changes.map(c => c.recordId)
+    });
+
+    // Keep only last 50 sync records per device
+    if (deviceEntry.syncHistory.length > 50) {
+      deviceEntry.syncHistory = deviceEntry.syncHistory.slice(-50);
+    }
+
+    // Store changes as separate file
+    const changesFileName = `${SYNC_CHANGES_FILE_PREFIX}-${deviceId}-${timestamp}.json`;
+    folder.createFile(changesFileName, JSON.stringify(changes, null, 2), MimeType.PLAIN_TEXT);
+
+    // Update registry file
+    syncRegistryFile.setContent(JSON.stringify(registry, null, 2));
+
+    return {
+      success: true,
+      message: 'Sync metadata updated',
+      deviceEntry: deviceEntry,
+      changesStored: changes.length
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.toString(),
+      message: 'Failed to update sync metadata'
+    };
+  }
+}
+
+/**
+ * Get sync metadata for a device
+ * Returns all synced data from other devices since last sync
+ */
+function getSyncMetadata(deviceId) {
+  try {
+    const folder = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME).next();
+    
+    // Get sync registry
+    const files = folder.getFilesByName(SYNC_REGISTRY_FILE_NAME);
+    if (!files.hasNext()) {
+      return {
+        success: true,
+        data: { devices: [], lastUpdate: null }
+      };
+    }
+
+    const syncRegistry = JSON.parse(files.next().getBlob().getDataAsString());
+
+    // Get changes from all other devices
+    const allFiles = folder.getFiles();
+    const recentChanges = [];
+
+    while (allFiles.hasNext()) {
+      const file = allFiles.next();
+      if (file.getName().startsWith(SYNC_CHANGES_FILE_PREFIX)) {
+        const parts = file.getName().split('-');
+        const changedDeviceId = parts[3]; // deviceId from filename
+
+        // Skip own device
+        if (changedDeviceId === deviceId) continue;
+
+        try {
+          const changes = JSON.parse(file.getBlob().getDataAsString());
+          recentChanges.push({
+            deviceId: changedDeviceId,
+            timestamp: file.getLastUpdated(),
+            changes: changes
+          });
+        } catch (e) {
+          Logger.log('Failed to parse changes file: ' + file.getName());
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        devices: syncRegistry.devices || [],
+        recentChanges: recentChanges,
+        lastUpdate: new Date().toISOString()
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.toString(),
+      data: { devices: [], lastUpdate: null }
+    };
+  }
+}
+
+/**
+ * Get device registry
+ * Lists all devices that have synced
+ */
+function getDeviceRegistry() {
+  try {
+    const folder = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME).next();
+    const files = folder.getFilesByName(SYNC_REGISTRY_FILE_NAME);
+    
+    if (!files.hasNext()) {
+      return {
+        success: true,
+        devices: [],
+        count: 0
+      };
+    }
+
+    const registry = JSON.parse(files.next().getBlob().getDataAsString());
+    
+    return {
+      success: true,
+      devices: registry.devices || [],
+      count: (registry.devices || []).length,
+      message: 'Device registry retrieved'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.toString(),
+      devices: [],
+      count: 0
+    };
+  }
+}
+
+/**
+ * Get sync statistics for all devices
+ */
+function getSyncStats() {
+  try {
+    const folder = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME).next();
+    const files = folder.getFilesByName(SYNC_REGISTRY_FILE_NAME);
+    
+    if (!files.hasNext()) {
+      return {
+        success: true,
+        stats: {
+          totalDevices: 0,
+          totalSyncs: 0,
+          totalChanges: 0
+        }
+      };
+    }
+
+    const registry = JSON.parse(files.next().getBlob().getDataAsString());
+    let totalSyncs = 0;
+    let totalChanges = 0;
+
+    for (const device of registry.devices || []) {
+      totalSyncs += device.syncHistory?.length || 0;
+      totalChanges += device.syncHistory?.reduce((sum, s) => sum + s.changeCount, 0) || 0;
+    }
+
+    return {
+      success: true,
+      stats: {
+        totalDevices: (registry.devices || []).length,
+        totalSyncs: totalSyncs,
+        totalChanges: totalChanges,
+        devices: registry.devices || []
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.toString(),
+      stats: {
+        totalDevices: 0,
+        totalSyncs: 0,
+        totalChanges: 0
+      }
+    };
+  }
+}
+
+/**
+ * Clean up old sync files (keep last 30 days)
+ */
+function cleanupOldSyncFiles() {
+  try {
+    const folder = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME).next();
+    const files = folder.getFiles();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let deletedCount = 0;
+
+    while (files.hasNext()) {
+      const file = files.next();
+      
+      // Clean up old sync change files
+      if (file.getName().startsWith(SYNC_CHANGES_FILE_PREFIX)) {
+        if (file.getLastUpdated() < thirtyDaysAgo) {
+          file.setTrashed(true);
+          deletedCount++;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      deletedFiles: deletedCount,
+      message: `Cleaned up ${deletedCount} old sync files`
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.toString(),
+      message: 'Failed to cleanup sync files'
+    };
+  }
+}
+
+/**
+ * Main POST endpoint — routes different backup operations.
+ * Accepts body as JSON string with Content-Type: text/plain
+ * (avoids CORS preflight when called from file:// or localhost origins).
+ */
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -324,6 +594,29 @@ function doPost(e) {
       case 'stats':
         result = getBackupStats();
         break;
+      
+      // NEW: Sync actions
+      case 'updateSyncMetadata':
+        result = updateSyncMetadata(
+          data.deviceId,
+          data.deviceName,
+          data.changes,
+          data.timestamp
+        );
+        break;
+      case 'getSyncMetadata':
+        result = getSyncMetadata(data.deviceId);
+        break;
+      case 'getDeviceRegistry':
+        result = getDeviceRegistry();
+        break;
+      case 'getSyncStats':
+        result = getSyncStats();
+        break;
+      case 'cleanupSyncFiles':
+        result = cleanupOldSyncFiles();
+        break;
+      
       default:
         result = {
           success: false,
@@ -359,8 +652,12 @@ function buildResponse(result) {
 function test() {
   Logger.log(JSON.stringify({
     status: 'FinCollect Google Apps Script is running',
-    version: '1.1',
+    version: '2.0 (with Multi-Device Sync)',
     timestamp: new Date().toISOString(),
-    availableActions: ['init', 'save', 'list', 'download', 'delete', 'stats']
+    availableActions: [
+      'init', 'save', 'list', 'download', 'delete', 'stats',
+      'updateSyncMetadata', 'getSyncMetadata', 'getDeviceRegistry',
+      'getSyncStats', 'cleanupSyncFiles'
+    ]
   }));
 }

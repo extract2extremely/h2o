@@ -1,5 +1,5 @@
 const DB_NAME = 'FinanceCollectionDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3; // Updated for sync metadata
 
 class DB {
     constructor() {
@@ -71,6 +71,43 @@ class DB {
                     stxStore.createIndex('userId', 'userId', { unique: false });
                     stxStore.createIndex('date', 'date', { unique: false });
                 }
+
+                // ═══════════════════════════════════════════════════════════
+                // NEW: Sync Metadata Stores (v3+)
+                // ═══════════════════════════════════════════════════════════
+
+                // Sync Metadata Store - tracks version, timestamps, device info
+                if (!db.objectStoreNames.contains('syncMetadata')) {
+                    const syncMetaStore = db.createObjectStore('syncMetadata', { keyPath: 'id' });
+                    syncMetaStore.createIndex('recordId', 'recordId', { unique: false });
+                    syncMetaStore.createIndex('storeName', 'storeName', { unique: false });
+                    syncMetaStore.createIndex('lastModified', 'lastModified', { unique: false });
+                    syncMetaStore.createIndex('lastModifiedBy', 'lastModifiedBy', { unique: false });
+                }
+
+                // Device Registry Store - tracks all devices accessing this account
+                if (!db.objectStoreNames.contains('deviceRegistry')) {
+                    const devRegistry = db.createObjectStore('deviceRegistry', { keyPath: 'deviceId' });
+                    devRegistry.createIndex('lastSeen', 'lastSeen', { unique: false });
+                    devRegistry.createIndex('deviceName', 'deviceName', { unique: false });
+                }
+
+                // Change History Store - full audit trail for conflicts
+                if (!db.objectStoreNames.contains('changeHistory')) {
+                    const histStore = db.createObjectStore('changeHistory', { keyPath: 'id', autoIncrement: true });
+                    histStore.createIndex('recordId', 'recordId', { unique: false });
+                    histStore.createIndex('storeName', 'storeName', { unique: false });
+                    histStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    histStore.createIndex('deviceId', 'deviceId', { unique: false });
+                }
+
+                // Sync Conflicts Store - stores unresolved conflicts
+                if (!db.objectStoreNames.contains('syncConflicts')) {
+                    const conflictStore = db.createObjectStore('syncConflicts', { keyPath: 'id', autoIncrement: true });
+                    conflictStore.createIndex('recordId', 'recordId', { unique: false });
+                    conflictStore.createIndex('status', 'status', { unique: false });
+                    conflictStore.createIndex('createdAt', 'createdAt', { unique: false });
+                }
             };
         });
     }
@@ -132,6 +169,240 @@ class DB {
             const request = store.delete(id);
 
             request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SYNC METADATA METHODS (v3+)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Add sync metadata to a record
+     */
+    async addSyncMetadata(recordId, storeName, deviceId, deviceName) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncMetadata'], 'readwrite');
+            const store = transaction.objectStore('syncMetadata');
+            
+            const metadata = {
+                id: `${storeName}_${recordId}`,
+                recordId: recordId,
+                storeName: storeName,
+                version: 1,
+                lastModified: new Date().toISOString(),
+                lastModifiedBy: deviceId,
+                lastModifiedByName: deviceName,
+                synced: false,
+                createdAt: new Date().toISOString()
+            };
+
+            const request = store.put(metadata);
+            request.onsuccess = () => resolve(metadata);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Update sync metadata for a record
+     */
+    async updateSyncMetadata(recordId, storeName, deviceId, deviceName) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncMetadata'], 'readwrite');
+            const store = transaction.objectStore('syncMetadata');
+            const id = `${storeName}_${recordId}`;
+            
+            const getRequest = store.get(id);
+            
+            getRequest.onsuccess = () => {
+                const metadata = getRequest.result || {
+                    id: id,
+                    recordId: recordId,
+                    storeName: storeName,
+                    createdAt: new Date().toISOString()
+                };
+
+                metadata.version = (metadata.version || 0) + 1;
+                metadata.lastModified = new Date().toISOString();
+                metadata.lastModifiedBy = deviceId;
+                metadata.lastModifiedByName = deviceName;
+                metadata.synced = false;
+
+                const putRequest = store.put(metadata);
+                putRequest.onsuccess = () => resolve(metadata);
+                putRequest.onerror = () => reject(putRequest.error);
+            };
+            
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    /**
+     * Add change to history
+     */
+    async addChangeHistory(recordId, storeName, deviceId, deviceName, operation, oldValue, newValue) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['changeHistory'], 'readwrite');
+            const store = transaction.objectStore('changeHistory');
+            
+            const change = {
+                recordId: recordId,
+                storeName: storeName,
+                operation: operation, // 'create', 'update', 'delete', 'merge'
+                timestamp: new Date().toISOString(),
+                deviceId: deviceId,
+                deviceName: deviceName,
+                oldValue: oldValue,
+                newValue: newValue
+            };
+
+            const request = store.add(change);
+            request.onsuccess = () => resolve(change);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Register/update device in registry
+     */
+    async registerDevice(deviceId, deviceName) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['deviceRegistry'], 'readwrite');
+            const store = transaction.objectStore('deviceRegistry');
+            
+            const device = {
+                deviceId: deviceId,
+                deviceName: deviceName,
+                lastSeen: new Date().toISOString(),
+                registeredAt: new Date().toISOString()
+            };
+
+            const request = store.put(device);
+            request.onsuccess = () => resolve(device);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get all registered devices
+     */
+    async getDeviceRegistry() {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['deviceRegistry'], 'readonly');
+            const store = transaction.objectStore('deviceRegistry');
+            const request = store.getAll();
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Add conflict record
+     */
+    async addConflict(recordId, storeName, localChange, remoteChange, status = 'unresolved') {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncConflicts'], 'readwrite');
+            const store = transaction.objectStore('syncConflicts');
+            
+            const conflict = {
+                recordId: recordId,
+                storeName: storeName,
+                localChange: localChange,
+                remoteChange: remoteChange,
+                status: status, // 'unresolved', 'resolved', 'ignored'
+                createdAt: new Date().toISOString(),
+                resolvedAt: null
+            };
+
+            const request = store.add(conflict);
+            request.onsuccess = () => resolve(conflict);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get unresolved conflicts
+     */
+    async getUnresolvedConflicts() {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncConflicts'], 'readonly');
+            const store = transaction.objectStore('syncConflicts');
+            const index = store.index('status');
+            const request = index.getAll('unresolved');
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Mark conflict as resolved
+     */
+    async resolveConflict(conflictId, resolution) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncConflicts'], 'readwrite');
+            const store = transaction.objectStore('syncConflicts');
+            
+            const getRequest = store.get(conflictId);
+            
+            getRequest.onsuccess = () => {
+                const conflict = getRequest.result;
+                if (conflict) {
+                    conflict.status = 'resolved';
+                    conflict.resolution = resolution;
+                    conflict.resolvedAt = new Date().toISOString();
+
+                    const putRequest = store.put(conflict);
+                    putRequest.onsuccess = () => resolve(conflict);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    reject(new Error('Conflict not found'));
+                }
+            };
+            
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    /**
+     * Clear store
+     */
+    async clearStore(storeName) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.clear();
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Get records pending sync for a store
+     */
+    async getPendingRecords(storeName) {
+        if (!this.db) await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['syncMetadata'], 'readonly');
+            const store = transaction.objectStore('syncMetadata');
+            const index = store.index('storeName');
+            const request = index.getAll(storeName);
+
+            request.onsuccess = () => {
+                const pending = request.result.filter(m => !m.synced);
+                resolve(pending);
+            };
             request.onerror = () => reject(request.error);
         });
     }

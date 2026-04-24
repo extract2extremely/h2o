@@ -115,6 +115,60 @@ class App {
             }
         }, 2 * 60 * 1000); // 2 minutes
         // ─────────────────────────────────────────────────────────────────
+
+        // ── Multi-Device Sync Setup: fires 3 seconds after app opens ─────────────
+        setTimeout(async () => {
+            const gasUrl = localStorage.getItem('fincollect_gas_url');
+            
+            if (!gasUrl) {
+                console.log('[App] Sync skipped — no Apps Script URL configured.');
+                return;
+            }
+
+            try {
+                // Initialize device sync
+                if (window.deviceSyncManager) {
+                    // Register device in local registry
+                    await window.db.registerDevice(
+                        window.deviceSyncManager.deviceId,
+                        window.deviceSyncManager.deviceName
+                    );
+
+                    console.log('[App] Device registered for sync');
+                }
+
+                // Start continuous sync service
+                if (window.realTimeSyncService) {
+                    window.googleDriveManager.setScriptUrl(gasUrl);
+                    window.realTimeSyncService.start();
+                    console.log('[App] Real-time sync service started');
+                }
+
+                // Setup sync event listeners for UI updates
+                if (window.realTimeSyncService) {
+                    window.realTimeSyncService.addEventListener('sync-successful', (data) => {
+                        console.log('[App] Sync successful:', data);
+                        if (typeof Swal !== 'undefined' && data.remoteChanges > 0) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: '🔄 Data Updated',
+                                text: `Synced ${data.remoteChanges} change(s) from other devices.`,
+                                toast: true,
+                                position: 'top-end',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                timerProgressBar: false
+                            });
+                        }
+                    });
+                }
+
+            } catch (e) {
+                console.warn('[App] Sync initialization failed:', e.message);
+                // Sync failures are non-critical
+            }
+        }, 3 * 1000); // 3 seconds
+        // ─────────────────────────────────────────────────────────────────
     }
 
     _revealLogin(splash) {
