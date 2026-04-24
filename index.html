@@ -87,6 +87,10 @@
                     <h2 id="current-page-title">Dashboard</h2>
                 </div>
                 <div class="user-profile" role="region" aria-label="User controls">
+                    <button id="header-sync-btn" class="header-sync-btn" aria-label="Sync Data with Google Drive">
+                        <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+                        <span>Sync Data</span>
+                    </button>
                     <div class="online-status offline" id="connection-status" aria-label="Connection status" role="status">
                         <i class="fa-solid fa-wifi" aria-hidden="true"></i> <span aria-label="Currently offline">Offline</span>
                     </div>
@@ -191,6 +195,7 @@
     <script src="js/conflict-resolution.js"></script>
     <script src="js/realtime-sync-service.js"></script>
     <script src="js/sync-ui-manager.js"></script>
+    <script src="js/advanced-sync-modal.js"></script>
     
     <!-- Application Scripts -->
     <script src="js/currency-formatter.js"></script>
