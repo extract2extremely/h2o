@@ -383,7 +383,7 @@ h6 { font-size: var(--text-sm); font-weight: 600; }
 
 #floating-settings-btn {
     position: fixed;
-    bottom: clamp(120px, 18vw, 140px);
+    bottom: clamp(120px, 18vw, 150px);
     right: clamp(0.75rem, 2vw, 1.25rem);
     width: clamp(56px, 13vw, 64px);
     height: clamp(56px, 13vw, 64px);
@@ -499,7 +499,7 @@ h6 { font-size: var(--text-sm); font-weight: 600; }
         width: 52px;
         height: 52px;
         font-size: 1.3rem;
-        bottom: 100px;
+        
         right: 0.75rem;
     }
 }
@@ -1343,6 +1343,9 @@ tr:last-child td {
     .nav-links li:nth-child(7) { /* Sync - Sky */
         color: #0ea5e9;
     }
+     .nav-links li:nth-child(8) { /* Sync - Sky */
+        color: #50e971 !important;
+    }
 
     .nav-links li i {
         width: auto;
@@ -1360,7 +1363,8 @@ tr:last-child td {
 
     /* Hide Reports and Sync on mobile - shown in floating menu on small screens */
     .nav-links li[data-page="reports"],
-    .nav-links li[data-page="sync"] {
+    .nav-links li[data-page="sync"] ,
+    .nav-links li[data-page="complete-records"] {
         display: none !important;
     }
 
@@ -1415,13 +1419,15 @@ tr:last-child td {
 
     /* Floating button positioning on 480-639px (display controlled by JavaScript) */
     #floating-settings-btn {
-        bottom: clamp(85px, 14vw, 110px);
+        /* bottom: clamp(85px, 14vw, 110px); */
+        bottom: 95px !important;
     }
 
     /* Show floating menu on 480-639px */
     .floating-menu {
         display: flex !important;
         bottom: clamp(140px, 20vw, 170px);
+        
     }
 
     /* Show Reports/Sync in floating menu on 480-639px */
@@ -1773,21 +1779,38 @@ tr:last-child td {
         border-bottom: 1px solid var(--border-subtle);
     }
 
+ /* Color-coded nav items */
+    .nav-links li:nth-child(1) { color: #1e40af; }
+    .nav-links li:nth-child(2) { color: #0891b2; }
+    .nav-links li:nth-child(3) { color: #7c3aed; }
+    .nav-links li:nth-child(4) { color: #16a34a; }
+    .nav-links li:nth-child(5) { color: #ea580c; }
+    .nav-links li:nth-child(6) { color: #be185d; }
+    .nav-links li:nth-child(7) { color: #0369a1; }
+    .nav-links li:nth-child(8) { color: #d30fec; }
+
+
+
     .nav-links {
         flex: 1;
         display: flex;
         flex-direction: column;
+        height: 100vh;
+        justify-content: space-between;
         gap: 0;
         padding: var(--space-md) 0;
     }
 
     .nav-links li {
-        padding: var(--space-sm) var(--space-md);
-        font-size: var(--text-xs);
-        gap: var(--space-md);
-        border-radius: var(--radius-md);
-        margin: 0 var(--space-sm);
-        transition: all 200ms ease;
+        padding: var(--space-sm) var(--space-sm);
+        border-radius: var(--radius-sm);
+        margin: clamp(0.3rem, 0.5vw, 0.4rem) var(--space-sm);
+        transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        font-weight: 450;
+        color: var(--text-secondary);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
     }
 
     .nav-links li:hover {
@@ -1919,14 +1942,16 @@ tr:last-child td {
         flex: 1;
         display: flex;
         flex-direction: column;
+        height: 100vh;
+        justify-content: space-between !important;
         gap: 0;
         padding: var(--space-xs) 0;
     }
 
     .nav-links li {
-        padding: var(--space-md) var(--space-md);
-        border-radius: var(--radius-lg);
-        margin: clamp(0.3rem, 0.5vw, 0.4rem) var(--space-md);
+        padding: var(--space-sm) var(--space-sm);
+        border-radius: var(--radius-sm);
+        margin: clamp(0.3rem, 0.5vw, 0.4rem) var(--space-sm);
         transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
         font-weight: 500;
         color: var(--text-secondary);
@@ -2145,6 +2170,8 @@ tr:last-child td {
         flex: 1;
         display: flex;
         flex-direction: column;
+        height: 100vh;
+        justify-content: space-between;
         gap: 0;
         padding: var(--space-md) 0;
     }
@@ -2597,6 +2624,185 @@ tr:last-child td {
 
 .savings-schedule-table .cumulative-balance {
     transition: all 200ms ease;
+}
+
+/* ═══════════════════════════════════════════ */
+/* LOAN SCHEDULE TABLE - Professional Styling */
+/* ═══════════════════════════════════════════ */
+.loan-schedule-table-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.loan-schedule-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.loan-schedule-table-wrapper thead {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+    border-bottom: 2px solid rgba(37, 99, 235, 0.15);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.loan-schedule-table-wrapper th {
+    padding: 1rem 0.75rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-align: center;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    user-select: none;
+    transition: background 200ms ease;
+    white-space: nowrap;
+}
+
+.loan-schedule-table-wrapper th:hover {
+    background: rgba(37, 99, 235, 0.12);
+}
+
+.loan-schedule-table-wrapper tbody tr {
+    border-bottom: 1px solid rgba(37, 99, 235, 0.08);
+    transition: background-color 200ms ease;
+}
+
+.loan-schedule-table-wrapper tbody tr:hover {
+    background: rgba(37, 99, 235, 0.04);
+}
+
+.loan-schedule-table-wrapper tbody tr:nth-child(even) {
+    background: rgba(37, 99, 235, 0.02);
+}
+
+.loan-schedule-table-wrapper td {
+    padding: 0.85rem 0.75rem;
+    font-size: 0.9rem;
+    text-align: center;
+    vertical-align: middle;
+    color: var(--text-secondary);
+}
+
+.loan-schedule-table-wrapper .status-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+}
+
+.loan-schedule-table-wrapper .status-badge.status-active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.loan-schedule-table-wrapper .payment-history-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    white-space: normal;
+}
+
+.loan-schedule-table-wrapper .log-payment-btn {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.loan-schedule-table-wrapper .log-payment-btn:hover {
+    background: #06b6d4;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(6, 182, 212, 0.2);
+}
+
+/* Filter Panel - Professional Styling */
+.filter-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.02) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    backdrop-filter: blur(4px);
+    margin-bottom: 1.5rem;
+}
+
+.filter-panel > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-panel label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.filter-panel .form-control {
+    padding: 0.75rem;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: rgba(255, 255, 255, 0.98);
+    transition: all 200ms ease;
+}
+
+.filter-panel .form-control:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08), inset 0 0 0 1px rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.3);
+}
+
+/* Statistics Cards */
+.loan-detail-schedule-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.loan-detail-schedule-stats .stat-card {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    transition: all 200ms ease;
+}
+
+.loan-detail-schedule-stats .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+.loan-detail-schedule-stats .stat-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(37, 99, 235, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.loan-detail-schedule-stats .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary-color);
 }
 
 .savings-schedule-table tbody tr:hover .cumulative-balance {
@@ -3537,5 +3743,852 @@ tr:last-child td {
     40%  { width: 60%; }
     75%  { width: 85%; }
     100% { width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* COMPLETE RECORDS - ULTRA SMALL SCREENS (<420px) - PROFESSIONAL MOBILE OPTIMIZATION */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 420px) {
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* UNIFIED STATISTICS CARD - All 4 Stats in One Professional Card */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    /* Main Statistics Container - 2x2 Grid in One Beautiful Card */
+    .complete-records-stats {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0 !important;
+        margin-bottom: 0.8rem !important;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%) !important;
+        border: 2px solid rgba(37, 99, 235, 0.15) !important;
+        border-radius: var(--radius-2xl) !important;
+        padding: 0 !important;
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+        overflow: hidden !important;
+    }
+    
+    /* Unified Stat Card - Adjusted Layout */
+    .complete-records-stats .stat-card {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0.8rem !important;
+        box-shadow: none !important;
+        flex: 1 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        margin: 0 !important;
+        border-right: 1px solid rgba(37, 99, 235, 0.12) !important;
+        border-bottom: 1px solid rgba(37, 99, 235, 0.12) !important;
+    }
+    
+    /* Remove hover effect on stat cards in combined layout */
+    .complete-records-stats .stat-card:hover {
+        box-shadow: none !important;
+        border-color: rgba(37, 99, 235, 0.12) !important;
+        transform: none !important;
+    }
+    
+    .complete-records-stats .stat-card:hover::before {
+        opacity: 0 !important;
+    }
+    
+    /* Top right - remove right border */
+    .complete-records-stats .stat-card:nth-child(2) {
+        border-right: none !important;
+    }
+    
+    /* Bottom left - remove bottom border */
+    .complete-records-stats .stat-card:nth-child(3) {
+        border-bottom: none !important;
+    }
+    
+    /* Bottom right - remove all borders */
+    .complete-records-stats .stat-card:nth-child(4) {
+        border: none !important;
+    }
+    
+    /* Stat Card Text Sizes - Compact for Ultra Small Screens */
+    .complete-records-stats .stat-label {
+        font-size: 0.55rem !important;
+        font-weight: 600 !important;
+        color: rgba(37, 99, 235, 0.75) !important;
+        letter-spacing: 0.3px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 0.3rem !important;
+        opacity: 0.95 !important;
+        line-height: 1 !important;
+    }
+    
+    .complete-records-stats .stat-value {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        color: var(--text-primary) !important;
+        line-height: 1 !important;
+        margin-bottom: 0.3rem !important;
+        background: none !important;
+        -webkit-text-fill-color: var(--text-primary) !important;
+    }
+    
+    .complete-records-stats .stat-subtext {
+        font-size: 0.6rem !important;
+        color: rgba(37, 99, 235, 0.65) !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* OPTIMIZED FILTER PANEL - Compact and Beautiful */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .filter-panel {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.6rem !important;
+        padding: 0.75rem !important;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%) !important;
+        border-radius: var(--radius-xl) !important;
+        border: 1.5px solid rgba(37, 99, 235, 0.12) !important;
+        backdrop-filter: blur(6px) !important;
+        margin-bottom: 0.8rem !important;
+    }
+    
+    .filter-panel > div {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.3rem !important;
+    }
+    
+    .filter-panel label {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        color: rgba(37, 99, 235, 0.75) !important;
+        letter-spacing: 0.25px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 0.15rem !important;
+    }
+    
+    .filter-panel .form-control {
+        padding: 0.5rem !important;
+        border: 1px solid rgba(37, 99, 235, 0.15) !important;
+        border-radius: var(--radius-md) !important;
+        font-size: 0.75rem !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        height: auto !important;
+        min-height: 36px !important;
+    }
+    
+    .filter-panel .form-control:focus {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08), inset 0 0 0 1px var(--primary-subtle) !important;
+    }
+    
+    .filter-panel i {
+        font-size: 0.65rem !important;
+        margin-right: 0.3rem !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* TABLE RESPONSIVENESS - Optimized for Tiny Screens */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .records-table-wrapper {
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08) !important;
+        border: 1px solid rgba(37, 99, 235, 0.1) !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .records-table-wrapper table {
+        font-size: 0.75rem !important;
+    }
+    
+    .records-table-wrapper th {
+        padding: 0.6rem 0.5rem !important;
+        font-weight: 700 !important;
+        font-size: 0.65rem !important;
+        text-align: center !important;
+    }
+    
+    .records-table-wrapper td {
+        padding: 0.5rem 0.4rem !important;
+        font-size: 0.7rem !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Professional Table Header Styling */
+    .records-table-wrapper thead {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.2) !important;
+        position: sticky !important;
+        top: 0 !important;
+    }
+    
+    .records-table-wrapper th {
+        padding: 0.65rem 0.45rem !important;
+        font-weight: 800 !important;
+        font-size: 0.63rem !important;
+        text-align: center !important;
+        color: var(--text-primary) !important;
+        letter-spacing: 0.02em !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Professional Table Body Styling */
+    .records-table-wrapper tbody {
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    .records-table-wrapper tbody tr {
+        border-bottom: 1px solid rgba(37, 99, 235, 0.08) !important;
+        transition: background-color 200ms ease !important;
+    }
+    
+    .records-table-wrapper tbody tr:hover {
+        background: rgba(37, 99, 235, 0.04) !important;
+    }
+    
+    .records-table-wrapper tbody tr:nth-child(even) {
+        background: rgba(37, 99, 235, 0.02) !important;
+    }
+    
+    .records-table-wrapper tbody tr:last-child {
+        border-bottom: none !important;
+    }
+    
+    /* Table Data Cell - Professional Styling */
+    .records-table-wrapper td {
+        padding: 0.55rem 0.38rem !important;
+        font-size: 0.68rem !important;
+        text-align: center !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        vertical-align: middle !important;
+    }
+    
+    /* Amount Column - Right Aligned & Bold */
+    .records-table-wrapper td:nth-child(4) {
+        text-align: center !important;
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Date Column - Center Aligned & Subtle */
+    .records-table-wrapper td:nth-child(1) {
+        font-size: 0.67rem !important;
+        color: rgba(37, 99, 235, 0.7) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Name/User Column - Better Readability */
+    .records-table-wrapper td:nth-child(2) {
+        font-weight: 600 !important;
+        color: var(--text-primary) !important;
+    }
+    
+    /* Type Column - Center & Professional */
+    .records-table-wrapper td:nth-child(3) {
+        font-size: 0.67rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.01em !important;
+        color: rgba(37, 99, 235, 0.75) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* ULTRA-COMPACT TABLE LAYOUT - Professional Typography */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .records-table-wrapper table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        font-size: 0.68rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* Scrollable Container for Small Screens */
+    .records-table-wrapper > div[style*="overflow-x"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    /* Smooth Scrollbar Styling */
+    .records-table-wrapper::-webkit-scrollbar {
+        height: 4px !important;
+    }
+    
+    .records-table-wrapper::-webkit-scrollbar-track {
+        background: rgba(37, 99, 235, 0.05) !important;
+        border-radius: 2px !important;
+    }
+    
+    .records-table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(37, 99, 235, 0.25) !important;
+        border-radius: 2px !important;
+        transition: background 200ms ease !important;
+    }
+    
+    .records-table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(37, 99, 235, 0.4) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* PAGINATION - Compact & Professional */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    /* Pagination Container */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] {
+        padding: 0.8rem 1rem !important;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.03) 0%, rgba(37, 99, 235, 0.01) 100%) !important;
+        border-top: 1px solid rgba(37, 99, 235, 0.1) !important;
+        gap: 0.6rem !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+    
+    /* Pagination Info Text */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] > div:first-child {
+        font-size: 0.68rem !important;
+        color: rgba(37, 99, 235, 0.7) !important;
+        font-weight: 600 !important;
+        width: 100% !important;
+        text-align: center !important;
+        margin-bottom: 0.6rem !important;
+        letter-spacing: 0.01em !important;
+    }
+    
+    /* Pagination Buttons Container */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] > div {
+        display: flex !important;
+        gap: 0.4rem !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    
+    /* Pagination Buttons */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] .btn {
+        padding: 0.45rem 0.55rem !important;
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        min-height: 32px !important;
+        height: auto !important;
+        border: 1px solid rgba(37, 99, 235, 0.15) !important;
+        border-radius: var(--radius-md) !important;
+        transition: all 200ms ease !important;
+    }
+    
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] .btn-secondary {
+        background: rgba(255, 255, 255, 0.95) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] .btn-secondary:hover {
+        background: var(--primary) !important;
+        color: white !important;
+        border-color: var(--primary) !important;
+    }
+    
+    /* Page Number Buttons */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] button[style*="border: 1px solid"] {
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.64rem !important;
+        font-weight: 700 !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        border-radius: var(--radius-md) !important;
+    }
+    
+    /* Page Number Active State */
+    div[style*="display: flex; justify-content: space-between; align-items: center; padding: 1rem"] button[style*="background: var(--primary)"] {
+        background: var(--primary) !important;
+        color: white !important;
+        border-color: var(--primary) !important;
+        font-weight: 800 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* COMPLETE RECORDS CONTAINER - Overall Optimization */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    /* Main Container - Better Spacing */
+    div[style*="display: flex; flex-direction: column; gap: 1.5rem"] {
+        gap: 0.6rem !important;
+        padding: 0.6rem !important;
+    }
+    
+    /* Action Buttons Container */
+    div[style*="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1.5rem"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.6rem !important;
+        margin-bottom: 0.8rem !important;
+        justify-content: center !important;
+    }
+    
+    /* Action Buttons */
+    div[style*="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1.5rem"] .btn {
+        padding: 0.6rem 0.8rem !important;
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 38px !important;
+        letter-spacing: 0.01em !important;
+        text-transform: uppercase !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+/* LOAN DETAILS - ULTRA SMALL SCREENS (<420px) - PROFESSIONAL PROFILE CARD & MODERN DESIGN */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 419px) {
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* PROFILE CARD - Modern Professional Design */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .loan-detail-profile-card {
+        border-radius: 20px !important;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%) !important;
+        border: 2px solid rgba(37, 99, 235, 0.15) !important;
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+        overflow: hidden !important;
+    }
+    
+    /* Profile Flex Container */
+    .loan-detail-profile-card > div[style*="display:flex; gap:1.5rem"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.8rem !important;
+        align-items: center !important;
+    }
+    
+    /* Profile Image - Centered & Professional */
+    .loan-detail-profile-card img[style*="width:100px"] {
+        width: 90px !important;
+        height: 90px !important;
+        border-radius: 16px !important;
+        border: 3px solid rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.2) !important;
+    }
+    
+    /* Name Heading - Professional */
+    .loan-detail-profile-card h2 {
+        font-size: 1.3rem !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        color: var(--text-primary) !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    /* Info Tags Container - Centered Grid */
+    .loan-detail-profile-card > div[style*="display:flex; gap:0.75rem; margin-top:0.5rem"] {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    /* Info Tags - Compact Style */
+    .loan-detail-profile-card .info-tag {
+        font-size: 0.68rem !important;
+        padding: 0.45rem 0.65rem !important;
+        background: rgba(37, 99, 235, 0.12) !important;
+        border: 1px solid rgba(37, 99, 235, 0.2) !important;
+        color: var(--primary) !important;
+        border-radius: var(--radius-full) !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Info Grid - 3 Column Layout */
+    .loan-detail-profile-card > div[style*="display:grid; grid-template-columns"] {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.8rem !important;
+        margin-top: 1rem !important;
+        padding-top: 1rem !important;
+        border-top: 1px solid rgba(37, 99, 235, 0.12) !important;
+    }
+    
+    .loan-detail-profile-card > div[style*="display:grid; grid-template-columns"] > div {
+        text-align: center !important;
+    }
+    
+    .loan-detail-profile-card small {
+        font-size: 0.6rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.01em !important;
+        font-weight: 700 !important;
+        color: rgba(37, 99, 235, 0.65) !important;
+        display: block !important;
+        margin-bottom: 0.4rem !important;
+    }
+    
+    .loan-detail-profile-card small + div {
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        color: var(--text-primary) !important;
+    }
+    
+    /* Report Button - Compact */
+    .loan-detail-profile-card .btn {
+        padding: 0.5rem 0.8rem !important;
+        font-size: 0.7rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* STAT CARDS - Grid-4 to Grid-2 (2x2 Layout) with Modern Icon Design */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .loan-detail-stats {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.8rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    .loan-detail-stats .stat-card {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%) !important;
+        border: 2px solid rgba(37, 99, 235, 0.15) !important;
+        border-radius: 16px !important;
+        padding: 0.9rem !important;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    /* Decorative Background Gradient */
+    .loan-detail-stats .stat-card::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -40px !important;
+        right: -40px !important;
+        width: 120px !important;
+        height: 120px !important;
+        background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, transparent 70%) !important;
+        border-radius: 50% !important;
+        z-index: 0 !important;
+    }
+    
+    /* Stat Card Content */
+    .loan-detail-stats .stat-card > * {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    /* Stat Label - Professional Typography */
+    .loan-detail-stats .stat-label {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        color: rgba(37, 99, 235, 0.75) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.02em !important;
+        margin-bottom: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+    }
+    
+    /* Add Icon to Labels */
+    .loan-detail-stats .stat-card:nth-child(1) .stat-label::before {
+        content: '💰' !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(2) .stat-label::before {
+        content: '✅' !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(3) .stat-label::before {
+        content: '⚠️' !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(4) .stat-label::before {
+        content: '📅' !important;
+        font-size: 1.1rem !important;
+    }
+    
+    /* Stat Value - Bold & Prominent */
+    .loan-detail-stats .stat-value {
+        font-size: 1.2rem !important;
+        font-weight: 800 !important;
+        color: var(--text-primary) !important;
+        line-height: 1 !important;
+        margin-bottom: 0.3rem !important;
+        background: none !important;
+        -webkit-text-fill-color: var(--text-primary) !important;
+    }
+    
+    /* Color Coding for Different Stats */
+    .loan-detail-stats .stat-card:nth-child(1) .stat-value {
+        color: #2563eb !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(2) .stat-value {
+        color: #16a34a !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(3) .stat-value {
+        color: #dc2626 !important;
+    }
+    
+    .loan-detail-stats .stat-card:nth-child(4) .stat-value {
+        color: #7c3aed !important;
+    }
+    
+    /* Stat Subtext - Subtle */
+    .loan-detail-stats .stat-card > div:last-child {
+        font-size: 0.6rem !important;
+        color: rgba(37, 99, 235, 0.6) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Stat Card Hover Effect */
+    .loan-detail-stats .stat-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+        border-color: rgba(37, 99, 235, 0.25) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* TABLE OPTIMIZATION - Reduced Font Sizes & Center Alignment */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    /* Table Container */
+    div[style*="margin-top:1.5rem;"] table {
+        width: 100% !important;
+        font-size: 0.68rem !important;
+        border-collapse: collapse !important;
+    }
+    
+    table thead {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.2) !important;
+    }
+    
+    table th {
+        padding: 0.65rem 0.4rem !important;
+        font-weight: 800 !important;
+        font-size: 0.62rem !important;
+        text-align: center !important;
+        color: var(--text-primary) !important;
+        letter-spacing: 0.02em !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+    }
+    
+    table tbody {
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    table tbody tr {
+        border-bottom: 1px solid rgba(37, 99, 235, 0.08) !important;
+        transition: background-color 200ms ease !important;
+    }
+    
+    table tbody tr:hover {
+        background: rgba(37, 99, 235, 0.04) !important;
+    }
+    
+    table tbody tr:nth-child(even) {
+        background: rgba(37, 99, 235, 0.02) !important;
+    }
+    
+    table td {
+        padding: 0.55rem 0.35rem !important;
+        font-size: 0.66rem !important;
+        text-align: center !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Date Column - Special Styling */
+    table td:nth-child(1) {
+        font-size: 0.65rem !important;
+        color: rgba(37, 99, 235, 0.7) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Due Amount Column - Bold & Color */
+    table td:nth-child(2) {
+        font-weight: 700 !important;
+        color: #dc2626 !important;
+    }
+    
+    /* Paid Amount Column - Success Color */
+    table td:nth-child(3) {
+        font-weight: 700 !important;
+        color: #16a34a !important;
+    }
+    
+    /* Received By Column */
+    table td:nth-child(4) {
+        font-size: 0.64rem !important;
+        color: rgba(37, 99, 235, 0.75) !important;
+    }
+    
+    /* Smooth Scrollbar */
+    div[style*="margin-top:1.5rem;"]::-webkit-scrollbar {
+        height: 4px !important;
+    }
+    
+    div[style*="margin-top:1.5rem;"]::-webkit-scrollbar-track {
+        background: rgba(37, 99, 235, 0.05) !important;
+    }
+    
+    div[style*="margin-top:1.5rem;"]::-webkit-scrollbar-thumb {
+        background: rgba(37, 99, 235, 0.25) !important;
+        border-radius: 2px !important;
+    }
+    
+    div[style*="margin-top:1.5rem;"]::-webkit-scrollbar-thumb:hover {
+        background: rgba(37, 99, 235, 0.4) !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    /* LOAN DETAIL SCHEDULE TABLE - Professional Filter System & Modern Design */
+    /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+    
+    .loan-schedule-table-wrapper {
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+        box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08) !important;
+        border: 1px solid rgba(37, 99, 235, 0.1) !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .loan-schedule-table-wrapper table {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Professional Table Header Styling */
+    .loan-schedule-table-wrapper thead {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.2) !important;
+        position: sticky !important;
+        top: 0 !important;
+    }
+    
+    .loan-schedule-table-wrapper th {
+        padding: 0.65rem 0.45rem !important;
+        font-weight: 800 !important;
+        font-size: 0.63rem !important;
+        text-align: center !important;
+        color: var(--text-primary) !important;
+        letter-spacing: 0.02em !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        transition: background 200ms ease !important;
+    }
+    
+    .loan-schedule-table-wrapper th:hover {
+        background: rgba(37, 99, 235, 0.15) !important;
+    }
+    
+    /* Professional Table Body Styling */
+    .loan-schedule-table-wrapper tbody {
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    .loan-schedule-table-wrapper tbody tr {
+        border-bottom: 1px solid rgba(37, 99, 235, 0.08) !important;
+        transition: background-color 200ms ease !important;
+    }
+    
+    .loan-schedule-table-wrapper tbody tr:hover {
+        background: rgba(37, 99, 235, 0.04) !important;
+    }
+    
+    .loan-schedule-table-wrapper td {
+        padding: 0.65rem 0.45rem !important;
+        font-size: 0.7rem !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Status Badge Styling */
+    .loan-schedule-table-wrapper .status-badge {
+        display: inline-block !important;
+        padding: 0.3rem 0.6rem !important;
+        border-radius: 6px !important;
+        font-weight: 700 !important;
+        font-size: 0.62rem !important;
+        letter-spacing: 0.01em !important;
+    }
+    
+    .loan-schedule-table-wrapper .status-active {
+        background: #dcfce7 !important;
+        color: #15803d !important;
+    }
+    
+    /* Statistics Cards for Filtered Data */
+    .loan-detail-schedule-stats {
+        display: grid !important;
+        gap: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .loan-detail-schedule-stats .stat-card {
+        border-radius: 12px !important;
+        padding: 0.75rem !important;
+        text-align: center !important;
+        border: 1px solid rgba(37, 99, 235, 0.15) !important;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%) !important;
+    }
+    
+    .loan-detail-schedule-stats .stat-label {
+        font-size: 0.65rem !important;
+        font-weight: 700 !important;
+        color: rgba(37, 99, 235, 0.7) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.02em !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .loan-detail-schedule-stats .stat-value {
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        color: var(--primary-color) !important;
+    }
+    
+    /* Scrollbar Customization for Schedule Table */
+    .loan-schedule-table-wrapper::-webkit-scrollbar {
+        height: 6px !important;
+    }
+    
+    .loan-schedule-table-wrapper::-webkit-scrollbar-track {
+        background: rgba(37, 99, 235, 0.05) !important;
+    }
+    
+    .loan-schedule-table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(37, 99, 235, 0.25) !important;
+        border-radius: 3px !important;
+    }
+    
+    .loan-schedule-table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: rgba(37, 99, 235, 0.4) !important;
+    }
 }
 

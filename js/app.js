@@ -75,6 +75,46 @@ class App {
 
         // Fade out splash
         this._hideSplash(splash);
+
+        // ── Auto-Backup: fires 2 minutes after app opens ──────────────────
+        setTimeout(async () => {
+            if (!navigator.onLine) {
+                console.log('[AutoBackup] Skipped — device is offline.');
+                return;
+            }
+            const gasUrl = localStorage.getItem('fincollect_gas_url');
+            if (!gasUrl) {
+                console.log('[AutoBackup] Skipped — no Apps Script URL configured.');
+                return;
+            }
+            try {
+                console.log('[AutoBackup] Starting scheduled backup…');
+                if (window.googleDriveManager) {
+                    window.googleDriveManager.setScriptUrl(gasUrl);
+                    await window.googleDriveManager.createAndSaveBackup('auto');
+                }
+                localStorage.setItem('fincollect_last_backup', new Date().toISOString());
+                console.log('[AutoBackup] Backup completed successfully.');
+
+                // Show a non-intrusive success toast
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '☁️ Auto-Backup Done',
+                        text: 'Your data has been saved to Google Drive.',
+                        toast: true,
+                        position: 'top-end',
+                        timer: 3500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                }
+            } catch (e) {
+                console.warn('[AutoBackup] Failed silently:', e.message);
+                // Auto-backup failures are silent — don't annoy the user
+            }
+        }, 2 * 60 * 1000); // 2 minutes
+        // ─────────────────────────────────────────────────────────────────
     }
 
     _revealLogin(splash) {
@@ -303,13 +343,7 @@ class App {
             case 'savings-detail':    window.ui.renderSavingsDetail(param);      break;
             case 'savings-types':     window.ui.renderSavingsTypes();            break;
             case 'add-savings-type':  window.ui.renderAddSavingsType(param);     break;
-            case 'sync':
-                window.ui.container.innerHTML = `
-                    <div style="padding:2rem;">
-                        <h3>Sync Feature</h3>
-                        <p>Configure your Google Script URL in settings.</p>
-                    </div>`;
-                break;
+            case 'sync':             window.ui.renderGoogleDriveBackup();       break;
             default:
                 window.ui.renderDashboard();
         }

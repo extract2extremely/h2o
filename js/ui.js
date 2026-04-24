@@ -2761,522 +2761,228 @@ ${renderImageInput("User Photo", "photo", borrower.photo)}
       reader.readAsDataURL(input.files[0]);
     }
   }
-  async renderAddLoan(preSelectedBorrowerId = null) {
-    this.setTitle("Create New Loan");
+  async renderAddLoan(param = null) {
+    let editLoan = null;
+    let preSelectedBorrowerId = null;
+    
+    // Try to determine if param is a loan ID (edit mode) or borrower ID (create mode)
+    if (param) {
+      // First, try to load as a loan (edit mode)
+      editLoan = await window.db.get("loans", param);
+      if (!editLoan) {
+        // If not found, treat as borrowerId (create mode)
+        preSelectedBorrowerId = param;
+      }
+    }
 
+    // Set title based on mode
+    const isEditMode = !!editLoan;
+    this.setTitle(isEditMode ? "Edit Loan" : "Create New Loan");
     this.hideFab();
 
     const borrowers = await window.db.getAll("borrowers");
 
     const borrowerOptions = borrowers
-      .map(
-        (b) =>
-          `<option value="${b.id}" ${b.id === preSelectedBorrowerId ? "selected" : ""}>${b.name} (${b.mobile})</option>`,
-      )
+      .map((b) => {
+        const selected = isEditMode 
+          ? b.id === editLoan.borrowerId 
+          : b.id === preSelectedBorrowerId;
+        return `<option value="${b.id}" ${selected ? "selected" : ""}>${b.name} (${b.mobile})</option>`;
+      })
       .join("");
 
     this.container.innerHTML = `
-
-
 <div class="card">
+  <form id="add-loan-form">
+    <div class="form-group">
+      <label>Select Customer</label>
+      <select class="form-control" name="borrowerId" required ${isEditMode ? "disabled" : ""}>
+        <option value="">-- Select Customer --</option>
+        ${borrowerOptions}
+      </select>
+    </div>
 
+    <div class="form-group">
+      <label style="margin-bottom:0.75rem; display:block;">Collection Frequency</label>
+      <div style="display:flex; gap:1.5rem;">
+        <label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
+          <input type="radio" name="frequency" value="Daily" ${(!isEditMode || editLoan.frequency === "Daily") ? "checked" : ""}> Daily
+        </label>
+        <label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
+          <input type="radio" name="frequency" value="Weekly" ${isEditMode && editLoan.frequency === "Weekly" ? "checked" : ""}> Weekly
+        </label>
+        <label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
+          <input type="radio" name="frequency" value="Monthly" ${isEditMode && editLoan.frequency === "Monthly" ? "checked" : ""}> Monthly
+        </label>
+      </div>
+    </div>
 
+    <div class="form-group">
+      <label>Loan Amount (Principal)</label>
+      <input type="number" class="form-control" name="principal" id="input-principal" value="${isEditMode ? editLoan.principalAmount : ""}" required>
+    </div>
 
-<form id="add-loan-form">
+    <div class="form-group">
+      <label>Interest (Total Amount)</label>
+      <input type="number" class="form-control" name="interest" id="input-interest" placeholder="e.g. 2000" value="${isEditMode ? editLoan.interestAmount : ""}">
+    </div>
 
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Installments (Count)</label>
+        <input type="number" class="form-control" name="installments" id="input-installments" value="${isEditMode ? editLoan.installmentsCount : "100"}">
+      </div>
+      <div class="form-group">
+        <label>Loan Per Installment</label>
+        <input type="number" class="form-control" name="installmentAmount" id="input-per-installment" value="${isEditMode ? editLoan.installmentAmount : ""}" readonly style="background:#f8fafc;">
+      </div>
+    </div>
 
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" class="form-control" name="startDate" id="input-start-date" value="${isEditMode ? editLoan.startDate : new Date().toISOString().split("T")[0]}" required>
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" class="form-control" name="endDate" id="input-end-date" value="${isEditMode ? editLoan.endDate : ""}" readonly style="background:#f8fafc;">
+      </div>
+    </div>
 
+    <div class="form-group">
+      <label>Amount Disbursed</label>
+      <input type="number" class="form-control" name="disbursed" id="input-disbursed" value="${isEditMode ? editLoan.disbursedAmount : ""}">
+    </div>
 
+    <div class="form-group">
+      <label>If Already Paid Amount</label>
+      <input type="number" class="form-control" name="alreadyPaid" value="${isEditMode ? editLoan.paidAmount : "0"}">
+    </div>
 
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label>Select Customer</label>
-
-
-
-
-
-<select class="form-control" name="borrowerId" required>
-
-
-
-
-
-
-<option value="">-- Select Customer --</option>
-
-
-
-
-
-
-${borrowerOptions}
-
-
-
-
-
-</select>
-
-
-
-
+    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 1rem; margin-top:1rem; font-size:1rem; border-radius: 30px;">
+      ${isEditMode ? "UPDATE LOAN" : "APPROVE"}
+    </button>
+    ${isEditMode ? `
+    <div style="display:flex; gap:0.75rem; margin-top:1rem;">
+      <button type="button" class="btn btn-danger" onclick="window.ui._deleteLoan('${editLoan.id}')" style="flex:1; padding:1rem; font-size:1rem; border-radius:30px; background:#fee2e2; color:#ef4444; border:1px solid #fecaca; font-weight:600; cursor:pointer; transition:all 0.2s ease;" onmouseenter="this.style.background='#fca5a5'" onmouseleave="this.style.background='#fee2e2';">
+        <i class="fa-solid fa-trash" style="margin-right:0.5rem;"></i> Delete Loan
+      </button>
+    </div>
+    ` : ""}
+  </form>
 </div>
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label style="margin-bottom:0.75rem; display:block;">Collection Frequency</label>
-
-
-
-
-
-<div style="display:flex; gap:1.5rem;">
-
-
-
-
-
-
-<label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
-
-
-
-
-
-
-
-<input type="radio" name="frequency" value="Daily" checked> Daily
-
-
-
-
-
-
-</label>
-
-
-
-
-
-
-<label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
-
-
-
-
-
-
-
-<input type="radio" name="frequency" value="Weekly"> Weekly
-
-
-
-
-
-
-</label>
-
-
-
-
-
-
-<label style="display:flex; align-items:center; gap:0.5rem; font-weight:400; color:var(--text-main); cursor:pointer;">
-
-
-
-
-
-
-
-<input type="radio" name="frequency" value="Monthly"> Monthly
-
-
-
-
-
-
-</label>
-
-
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label>Loan Amount (Principal)</label>
-
-
-
-
-
-<input type="number" class="form-control" name="principal" id="input-principal" required>
-
-
-
-
-</div>
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label>Interest (Total Amount)</label>
-
-
-
-
-
-<input type="number" class="form-control" name="interest" id="input-interest" placeholder="e.g. 2000">
-
-
-
-
-</div>
-
-
-
-
-<div class="grid-2">
-
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-
-<label>Installments (Count)</label>
-
-
-
-
-
-
-<input type="number" class="form-control" name="installments" id="input-installments" value="100">
-
-
-
-
-
-</div>
-
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-
-<label>Loan Per Installment</label>
-
-
-
-
-
-
-<input type="number" class="form-control" name="installmentAmount" id="input-per-installment" readonly style="background:#f8fafc;">
-
-
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-<div class="grid-2">
-
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-
-<label>Start Date</label>
-
-
-
-
-
-
-<input type="date" class="form-control" name="startDate" id="input-start-date" value="${new Date().toISOString().split("T")[0]}" required>
-
-
-
-
-
-</div>
-
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-
-<label>End Date</label>
-
-
-
-
-
-
-<input type="date" class="form-control" name="endDate" id="input-end-date" readonly style="background:#f8fafc;">
-
-
-
-
-
-</div>
-
-
-
-
-</div>
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label>Amount Disbursed</label>
-
-
-
-
-
-<input type="number" class="form-control" name="disbursed" id="input-disbursed">
-
-
-
-
-</div>
-
-
-
-
-<div class="form-group">
-
-
-
-
-
-<label>If Already Paid Amount</label>
-
-
-
-
-
-<input type="number" class="form-control" name="alreadyPaid" value="0">
-
-
-
-
-</div>
-
-
-
-
-<button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding: 1rem; margin-top:1rem; font-size:1rem; border-radius: 30px;">
-
-
-
-
-
-APPROVE
-
-
-
-
-</button>
-
-
-
-</form>
-
-
-</div>
-
 `;
 
     const form = document.getElementById("add-loan-form");
-
     const pInput = document.getElementById("input-principal");
-
     const iInput = document.getElementById("input-interest");
-
     const nInput = document.getElementById("input-installments");
-
     const perInput = document.getElementById("input-per-installment");
-
     const dateInput = document.getElementById("input-start-date");
-
     const endInput = document.getElementById("input-end-date");
-
     const disInput = document.getElementById("input-disbursed");
 
     const calculate = () => {
       const p = parseFloat(pInput.value) || 0;
-
       const i = parseFloat(iInput.value) || 0;
-
       const n = parseFloat(nInput.value) || 1;
-
       const total = p + i;
-
       const per = total / n;
-
       perInput.value = Math.ceil(per);
-      disInput.value = p;
+      if (!disInput.value) disInput.value = p;
 
       if (dateInput.value) {
         const start = new Date(dateInput.value);
-
-        const freq = form.querySelector(
-          'input[name="frequency"]:checked',
-        ).value;
-
+        const freq = form.querySelector('input[name="frequency"]:checked').value;
         let daysToAdd = n;
-
         if (freq === "Weekly") daysToAdd = n * 7;
-
         if (freq === "Monthly") daysToAdd = n * 30;
-
         start.setDate(start.getDate() + daysToAdd);
-
         endInput.value = start.toISOString().split("T")[0];
       }
     };
 
     [pInput, iInput, nInput, dateInput].forEach((el) =>
-      el.addEventListener("input", calculate),
+      el.addEventListener("input", calculate)
     );
 
-    form
-      .querySelectorAll('input[name="frequency"]')
-      .forEach((el) => el.addEventListener("change", calculate));
+    form.querySelectorAll('input[name="frequency"]').forEach((el) =>
+      el.addEventListener("change", calculate)
+    );
 
     form.onsubmit = async (e) => {
       e.preventDefault();
-
       const formData = new FormData(e.target);
-
       const data = Object.fromEntries(formData.entries());
 
-      const loan = {
-        id: crypto.randomUUID(),
+      if (isEditMode) {
+        // Update existing loan
+        const updatedLoan = {
+          ...editLoan,
+          frequency: data.frequency,
+          principalAmount: data.principal,
+          interestAmount: data.interest,
+          totalAmount: (parseFloat(data.principal) + parseFloat(data.interest)).toString(),
+          installmentsCount: data.installments,
+          installmentAmount: data.installmentAmount,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          disbursedAmount: data.disbursed,
+          paidAmount: data.alreadyPaid || 0,
+          updatedAt: new Date().toISOString(),
+        };
 
-        borrowerId: data.borrowerId,
+        await window.db.add("loans", updatedLoan);
 
-        loanNo: Math.floor(1000 + Math.random() * 9000).toString(),
+        Swal.fire({
+          icon: "success",
+          title: "Loan Updated!",
+          text: "Loan details updated successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
 
-        frequency: data.frequency,
+        window.app.navigate("loan-detail", editLoan.id);
+      } else {
+        // Create new loan
+        const loan = {
+          id: crypto.randomUUID(),
+          borrowerId: data.borrowerId,
+          loanNo: Math.floor(1000 + Math.random() * 9000).toString(),
+          frequency: data.frequency,
+          principalAmount: data.principal,
+          interestAmount: data.interest,
+          totalAmount: (parseFloat(data.principal) + parseFloat(data.interest)).toString(),
+          installmentsCount: data.installments,
+          installmentAmount: data.installmentAmount,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          disbursedAmount: data.disbursed,
+          paidAmount: data.alreadyPaid || 0,
+          status: "active",
+          createdAt: new Date().toISOString(),
+        };
 
-        principalAmount: data.principal,
+        await window.db.add("loans", loan);
 
-        interestAmount: data.interest,
+        Swal.fire({
+          icon: "success",
+          title: "Loan Approved!",
+          text: "New loan created successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
 
-        totalAmount: (
-          parseFloat(data.principal) + parseFloat(data.interest)
-        ).toString(),
-
-        installmentsCount: data.installments,
-
-        installmentAmount: data.installmentAmount,
-
-        startDate: data.startDate,
-
-        endDate: data.endDate,
-
-        disbursedAmount: data.disbursed,
-
-        paidAmount: data.alreadyPaid || 0,
-
-        status: "active",
-
-        createdAt: new Date().toISOString(),
-      };
-
-      await window.db.add("loans", loan);
-
-      Swal.fire({
-        icon: "success",
-
-        title: "Loan Approved!",
-
-        text: "New loan created successfully.",
-
-        timer: 1500,
-
-        showConfirmButton: false,
-      });
-
-      window.app.navigate("borrower-detail", data.borrowerId);
+        window.app.navigate("borrower-detail", data.borrowerId);
+      }
     };
+
+    // Trigger calculation if in edit mode
+    if (isEditMode) {
+      calculate();
+    }
   }
+
   async renderFastCollection() {
     this.setTitle("Fast Input Collection");
     this.hideFab();
@@ -5171,6 +4877,20 @@ View Statement / History
 
     if (!loan) return;
 
+    // Initialize filter state if not exists
+    if (!this.loanDetailFilterState) {
+      this.loanDetailFilterState = {
+        search: '',
+        status: 'all',
+        dateFrom: '',
+        dateTo: '',
+        minAmount: '',
+        maxAmount: '',
+        sortBy: 'dueDate',
+        sortOrder: 'asc'
+      };
+    }
+
     const borrower = await window.db.get("borrowers", loan.borrowerId);
 
     const balance = parseFloat(loan.totalAmount) - parseFloat(loan.paidAmount);
@@ -5258,8 +4978,70 @@ View Statement / History
 
     const paidCount = scheduleData.filter((s) => s.status === "PAID").length;
 
-    const rows = scheduleData
+    // Apply filters and sorting
+    let filteredSchedule = [...scheduleData];
+    const state = this.loanDetailFilterState;
+
+    // Search filter
+    if (state.search.trim()) {
+      const search = state.search.toLowerCase();
+      filteredSchedule = filteredSchedule.filter(item => {
+        return (
+          String(item.dueDate).includes(search) ||
+          String(item.amount).includes(search) ||
+          item.status.toLowerCase().includes(search)
+        );
+      });
+    }
+
+    // Status filter
+    if (state.status !== 'all') {
+      filteredSchedule = filteredSchedule.filter(item => item.status === state.status);
+    }
+
+    // Date range filter
+    if (state.dateFrom) {
+      filteredSchedule = filteredSchedule.filter(item => item.dueDate >= state.dateFrom);
+    }
+    if (state.dateTo) {
+      filteredSchedule = filteredSchedule.filter(item => item.dueDate <= state.dateTo);
+    }
+
+    // Amount range filter
+    if (state.minAmount) {
+      const minAmt = parseFloat(state.minAmount);
+      filteredSchedule = filteredSchedule.filter(item => parseFloat(item.amount || 0) >= minAmt);
+    }
+    if (state.maxAmount) {
+      const maxAmt = parseFloat(state.maxAmount);
+      filteredSchedule = filteredSchedule.filter(item => parseFloat(item.amount || 0) <= maxAmt);
+    }
+
+    // Sort
+    filteredSchedule.sort((a, b) => {
+      let aVal = a[state.sortBy];
+      let bVal = b[state.sortBy];
+
+      if (state.sortBy === 'dueDate' || state.sortBy === 'amount') {
+        if (state.sortBy === 'amount') {
+          aVal = parseFloat(aVal || 0);
+          bVal = parseFloat(bVal || 0);
+        }
+      } else {
+        aVal = String(aVal).toLowerCase();
+        bVal = String(bVal).toLowerCase();
+      }
+
+      if (state.sortOrder === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+
+    const rows = filteredSchedule
       .map((item, index) => {
+        const originalIndex = scheduleData.findIndex(s => s.dueDate === item.dueDate && s.amount === item.amount);
         const ratio = item.paidAmount / item.amount;
 
         let statusBadge = "";
@@ -5291,28 +5073,9 @@ View Statement / History
                   });
 
                   return `<span class="pay-history-entry" title="${h.note || ""} • ${dt.toLocaleString()}">
-
-
-
-
-
 <span class="entry-dot"></span>
-
-
-
-
-
 <span class="entry-amount"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:none'>৳</span>${h.amount}</span>
-
-
-
-
-
 <span style="color:#64748b; font-weight:500;">${dateStr} ${timeStr}</span>
-
-
-
-
 </span>`;
                 })
                 .join("")
@@ -5332,312 +5095,142 @@ View Statement / History
           : `<span class="received-by-empty">—</span>`;
 
         return `
-
-
-
-<tr class="schedule-row"
-
-
-
-
-data-index="${index}"
-
-
-
-
+<tr class="schedule-row" style="border-bottom: 1px solid rgba(37, 99, 235, 0.08); ${index % 2 === 0 ? 'background: rgba(37, 99, 235, 0.02);' : 'background: white;'}"
+data-index="${originalIndex}"
 data-due-date="${item.dueDate}"
-
-
-
-
 data-amount="${item.amount}"
-
-
-
-
 data-no="${item.no}">
-
-
-
-
 <td style="padding:0.75rem 0.5rem; text-align:center; color:#64748b; font-weight:600;">${item.no}</td>
-
-
-
-
 <td style="padding:0.75rem 0.5rem; font-weight:500;">${item.dueDate}</td>
-
-
-
-
 <td style="padding:0.75rem 0.5rem;">${statusBadge}</td>
-
-
-
-
 <td style="padding:0.75rem 0.5rem; font-weight:600;"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:none'>৳</span>${item.amount}</td>
-
-
-
-
-<!-- Payment History -->
-
-
-
-
 <td style="padding:0.5rem 0.75rem;">
-
-
-
-
-
 <div class="payment-history-cell">
-
-
-
-
-
-
 ${historyHtml}
-
-
-
-
-
-
-<button class="log-payment-btn" onclick="window.ui.logManualPayment('${id}', ${index})">
-
-
-
-
-
-
-
+<button class="log-payment-btn" onclick="window.ui.logManualPayment('${id}', ${originalIndex})">
 <i class="fa-solid fa-plus" style="font-size:0.65rem;"></i> Log
-
-
-
-
-
-
 </button>
-
-
-
-
-
 </div>
-
-
-
-
 </td>
-
-
-
-
-<!-- Received By -->
 <td style="padding:0.5rem 0.75rem;">
   ${receivedByHtml}
 </td>
-
-
-
-
 <td style="padding:0.5rem;">
-
-
-
-
-
 <input type="number"
-
-
-
-
-
-
 class="form-control schedule-amount"
-
-
-
-
-
-
 value="${item.paidAmount}"
-
-
-
-
-
-
 data-prev-paid="${item.paidAmount}"
-
-
-
-
-
-
 style="font-size:0.9rem; padding:0.4rem; font-weight:600; width:100px;">
-
-
-
-
 </td>
-
-
-
 </tr>
-
-
 `;
       })
       .join("");
 
+    // Calculate stats for filtered data
+    const totalDueAmount = filteredSchedule.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
+    const totalPaidAmount = filteredSchedule.reduce((sum, item) => sum + parseFloat(item.paidAmount || 0), 0);
+    const paidCount_filtered = filteredSchedule.filter(s => s.status === 'PAID').length;
+    const partialCount = filteredSchedule.filter(s => s.status === 'PARTIAL').length;
+    const dueCount = filteredSchedule.filter(s => s.status === 'DUE').length;
+
     const scheduleHtml = `
+<!-- FILTER PANEL -->
+<div class="filter-panel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.02) 100%); border-radius: var(--radius-lg); border: 1px solid rgba(37, 99, 235, 0.1); backdrop-filter: blur(4px); margin-bottom: 1.5rem;">
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-magnifying-glass" style="margin-right: 0.35rem;"></i>Search</label>
+    <input type="text" class="form-control" placeholder="Date, Amount, Status..." value="${state.search}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.search = this.value; window.ui.renderLoanDetail('${id}');" onkeyup="this.onchange();">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-check-circle" style="margin-right: 0.35rem; color: #16a34a;"></i>Status</label>
+    <select class="form-control" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.status = this.value; window.ui.renderLoanDetail('${id}');">
+      <option value="all">All Status</option>
+      <option value="PAID">PAID</option>
+      <option value="PARTIAL">PARTIAL</option>
+      <option value="DUE">DUE</option>
+    </select>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-calendar-check" style="margin-right: 0.35rem;"></i>From Date</label>
+    <input type="date" class="form-control" value="${state.dateFrom}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.dateFrom = this.value; window.ui.renderLoanDetail('${id}');">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-calendar" style="margin-right: 0.35rem;"></i>To Date</label>
+    <input type="date" class="form-control" value="${state.dateTo}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.dateTo = this.value; window.ui.renderLoanDetail('${id}');">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Min Amount (৳)</label>
+    <input type="number" class="form-control" placeholder="Minimum" value="${state.minAmount}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.minAmount = this.value; window.ui.renderLoanDetail('${id}');">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Max Amount (৳)</label>
+    <input type="number" class="form-control" placeholder="Maximum" value="${state.maxAmount}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.loanDetailFilterState.maxAmount = this.value; window.ui.renderLoanDetail('${id}');">
+  </div>
+  <div style="display: flex; align-items: flex-end;">
+    <button class="btn btn-secondary" onclick="window.ui.loanDetailFilterState = {search: '', status: 'all', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', sortBy: 'dueDate', sortOrder: 'asc'}; window.ui.renderLoanDetail('${id}');" style="width: 100%; padding: 0.75rem; cursor: pointer;"><i class="fa-solid fa-rotate-left" style="margin-right: 0.5rem;"></i>Clear</button>
+  </div>
+</div>
 
+<!-- STATISTICS -->
+<div class="loan-detail-schedule-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+  <div class="stat-card" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%); border: 1px solid rgba(37, 99, 235, 0.15); border-radius: 12px; padding: 1rem; text-align: center;">
+    <div class="stat-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.5rem;">Total Installments</div>
+    <div class="stat-value" style="font-size: 1.2rem; font-weight: 700; color: var(--primary-color);">${filteredSchedule.length}</br> <span class="stat-value"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:show'>TK </span>${parseInt(loan.totalAmount).toLocaleString()}</span></div>
+  </div>
+  <div class="stat-card" style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%); border: 1px solid rgba(22, 163, 74, 0.2); border-radius: 12px; padding: 1rem; text-align: center;">
+    <div class="stat-label" style="font-size: 0.75rem; font-weight: 600; color: #15803d; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.5rem;">💰 Total Paid</div>
+    <div class="stat-value" style="font-size: 1rem; font-weight: 700; color: #16a34a;">৳${totalPaidAmount.toLocaleString()}</div>
+  </div>
+  <div class="stat-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 1rem; text-align: center;">
+    <div class="stat-label" style="font-size: 0.75rem; font-weight: 600; color: #991b1b; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.5rem;">⚠️ Remaining</div>
+    <div class="stat-value" style="font-size: 1rem; font-weight: 700; color: #dc2626;">৳${(totalDueAmount - totalPaidAmount).toLocaleString()}</div>
+  </div>
+  <div class="stat-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1rem; text-align: center;">
+    <div class="stat-label" style="font-size: 0.75rem; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.5rem;">📊 Progress</div>
+    <div class="stat-value" style="font-size: 1rem; font-weight: 700; color: #3b82f6;"><span class="stat-value" style="color:var(--primary-color)">${paidCount}/${loan.installmentsCount}</span>
+   
+   </br> <span class="stat-value" style="color:var(--primary-color)">${totalDueAmount > 0 ? Math.round((totalPaidAmount / totalDueAmount) * 100) : 0}%</span>
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin:2rem 0 1rem;">
+    </div>
+    
+  </div>
+</div>
 
-
-
+<div style="display:flex; justify-content:space-between; align-items:center; margin:1.5rem 0 1rem;">
 <h4 style="margin:0; display:flex; align-items:center; gap:0.5rem;">
-
-
-
-
 <i class="fa-solid fa-list-ol" style="color:var(--primary-color);"></i> Installment Schedule
-
-
-
 </h4>
-
-
-
 <button class="btn btn-primary btn-sm" onclick="window.ui.saveSchedule('${id}')">
-
-
-
-
 <i class="fa-solid fa-cloud-arrow-up"></i> Save Schedule
-
-
-
 </button>
-
-
 </div>
 
-
-
-
-
-<div class="card" style="padding:0; overflow:hidden; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); overflow-x:auto;">
-
-
-
-<table class="modern-table" style="width:100%; min-width:640px; border-collapse:collapse;">
-
-
-
-
-<thead style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
-
-
-
-
-
+<div class="loan-schedule-table-wrapper" style="border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(37, 99, 235, 0.08); background: white;">
+<div style="overflow-x: auto;">
+<table class="modern-table" style="width:100%; min-width:640px; border-collapse:collapse; font-size: 0.9rem;">
+<thead style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%); border-bottom: 2px solid rgba(37, 99, 235, 0.15);">
 <tr>
-
-
-
-
-
-
-<th style="text-align:center; width:50px;">No</th>
-
-
-
-
-
-
-<th>Due Date</th>
-
-
-
-
-
-
-<th>Status</th>
-
-
-
-
-
-
-<th>Due Amount</th>
-
-
-
-
-
-
-<th>Payment History</th>
-
-
-
-
-
-
-<th style="min-width:150px;">Received By</th>
-
-
-
-
-
-
-<th>Paid Amount</th>
-
-
-
-
-
+<th style="text-align:center; width:50px; padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;" onclick="window.ui._sortLoanSchedule('no', '${id}');">No</th>
+<th style="padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;" onclick="window.ui._sortLoanSchedule('dueDate', '${id}');">Due Date ${state.sortBy === 'dueDate' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+<th style="padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;" onclick="window.ui._sortLoanSchedule('status', '${id}');">Status</th>
+<th style="padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem; cursor: pointer;" onclick="window.ui._sortLoanSchedule('amount', '${id}');">Due Amount ${state.sortBy === 'amount' ? (state.sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+<th style="padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem;">Payment History</th>
+<th style="min-width:150px; padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem;">Received By</th>
+<th style="padding: 1rem 0.5rem; font-weight: 700; font-size: 0.9rem;">Paid Amount</th>
 </tr>
-
-
-
-
 </thead>
-
-
-
-
 <tbody>
-
-
-
-
-
 ${rows}
-
-
-
-
 </tbody>
-
-
-
 </table>
-
-
 </div>
-
+</div>
 `;
 
     this.container.innerHTML = `
 
 
-<div class="card" style="border-radius:16px; margin-bottom:1.5rem; position:relative;">
+<div class="card loan-detail-profile-card" style="border-radius:16px; margin-bottom:1.5rem; position:relative;">
 
 
 
@@ -5749,22 +5342,10 @@ ${rows}
 
 
 
-<button class="btn btn-secondary" onclick="window.ui.generateReport('${id}')" title="Download Report">
-
-
-
-
-
-
-
-<i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Report
-
-
-
-
-
-
-</button>
+<div style="display:flex; gap:0.5rem; align-items:flex-start;">
+  <button class="btn btn-secondary" onclick="window.app.navigate('add-loan', '${id}')" title="Edit Loan"><i class="fa-solid fa-pen" style="color:#64748b;"></i> Edit</button>
+  <button class="btn btn-secondary" onclick="window.ui.generateReport('${id}')" title="Download Report"><i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> Report</button>
+</div>
 
 
 
@@ -5893,82 +5474,7 @@ ${rows}
 </div>
 
 
-<div class="grid-4">
 
-
-
- <div class="card stat-card">
-
-
-
-
-<span class="stat-label">Total Loan</span>
-
-
-
-
-<span class="stat-value"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:none'>৳</span>${parseInt(loan.totalAmount).toLocaleString()}</span>
-
-
-
-</div>
-
-
-
- <div class="card stat-card">
-
-
-
-
-<span class="stat-label">Total Paid</span>
-
-
-
-
-<span class="stat-value text-success"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:none'>৳</span>${parseInt(loan.paidAmount).toLocaleString()}</span>
-
-
-
-</div>
-
-
-
- <div class="card stat-card">
-
-
-
-
-<span class="stat-label">Balance</span>
-
-
-
-
-<span class="stat-value text-danger"><i class='fi fi-sr-bangladeshi-taka-sign'></i><span style='display:none'>৳</span>${balance.toLocaleString()}</span>
-
-
-
-</div>
-
-
-
- <div class="card stat-card">
-
-
-
-
-<span class="stat-label">Installments</span>
-
-
-
-
-<span class="stat-value" style="color:var(--primary-color)">${paidCount}/${loan.installmentsCount}</span>
-
-
-
-</div>
-
-
-</div>
 
 
 ${scheduleHtml}
@@ -6829,7 +6335,7 @@ ${styles}
     }
   }
   async renderReports() {
-    this.setTitle("Database Management & Backups");
+    this.setTitle("Database & Backups");
 
     this.hideFab();
 
@@ -6885,7 +6391,7 @@ ${styles}
   .stat-card-size { font-size: 0.75rem; }
   .stat-card-icon { width: 60px; height: 60px; font-size: 1.75rem; }
   .stat-card-container { padding: 1.5rem; gap: 1rem; }
-  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
   .backup-section { padding: 2rem; gap: 2rem; }
   .backup-header { font-size: 1.5rem; gap: 1rem; margin-bottom: 2rem; }
   .backup-icon { width: 50px; height: 50px; font-size: 1.5rem; }
@@ -6898,12 +6404,12 @@ ${styles}
   /* Tablet (768px and below) */
   @media (max-width: 768px) {
     .stat-card-title { font-size: 0.7rem; }
-    .stat-card-number { font-size: 1.5rem; }
+    .stat-card-number { font-size: 1.25rem; }
     .stat-card-subtitle { font-size: 0.8rem; }
     .stat-card-size { font-size: 0.65rem; }
-    .stat-card-icon { width: 50px; height: 50px; font-size: 1.3rem; }
+    .stat-card-icon { width: 40px; height: 40px; font-size: 1.3rem; }
     .stat-card-container { padding: 1.25rem; gap: 0.75rem; }
-    .stat-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
     .backup-section { padding: 1.5rem; gap: 1.5rem; }
     .backup-header { font-size: 1.2rem; gap: 0.75rem; margin-bottom: 1.5rem; }
     .backup-icon { width: 45px; height: 45px; font-size: 1.2rem; }
@@ -7075,6 +6581,79 @@ ${styles}
       </p>
     </div>
   </div>
+
+  <!-- Google Drive Backup Section -->
+  <div class="backup-section" style="background: linear-gradient(135deg, #f3e8ff 0%, #fae8ff 100%); border: 2px solid #e9d5ff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin-bottom: 2rem; display: flex; flex-direction: column;">
+    <div class="backup-header" style="display: flex; align-items: center;">
+      <div class="backup-icon" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+        <i class="fa-solid fa-cloud"></i>
+      </div>
+      <h3 style="font-weight: 700; color: #1f2937; margin: 0;">Google Drive Cloud Backup</h3>
+    </div>
+
+    <!-- Google Drive Status -->
+    <div id="gdrive-status" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%); border-left: 4px solid #a855f7; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+      <div style="flex-shrink: 0;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="color: #a855f7; font-size: 1.25rem;"></i>
+      </div>
+      <div style="flex: 1;">
+        <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
+          <strong id="gdrive-status-text">Checking Google Drive connection...</strong>
+        </p>
+      </div>
+    </div>
+
+    <!-- Google Drive Buttons Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+      <!-- Backup to Google Drive Button -->
+      <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%); border: 2px dashed #a855f7; border-radius: 14px; padding: 2rem; text-align: center; transition: all 300ms ease;" id="gdrive-backup-section" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 16px rgba(168, 85, 247, 0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+        <div class="export-icon" style="color: #a855f7; margin-bottom: 1rem; line-height: 1;">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <h4 class="export-title" style="font-weight: 700; color: #1f2937; margin: 0.5rem 0;">Backup to Google Drive</h4>
+        <p class="export-desc" style="color: #6b7280; margin: 0.5rem 0 1.5rem 0;">Upload database to your Google Drive securely</p>
+        <button id="gdrive-backup-btn" class="backup-btn" style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(168, 85, 247, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(168, 85, 247, 0.3)'">
+          <i class="fa-solid fa-arrow-up-to-line" style="margin-right: 0.5rem;"></i> Backup Now
+        </button>
+      </div>
+
+      <!-- Restore from Google Drive Button -->
+      <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%); border: 2px dashed #a855f7; border-radius: 14px; padding: 2rem; text-align: center; transition: all 300ms ease;" id="gdrive-restore-section" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 16px rgba(168, 85, 247, 0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+        <div class="export-icon" style="color: #a855f7; margin-bottom: 1rem; line-height: 1;">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+        </div>
+        <h4 class="export-title" style="font-weight: 700; color: #1f2937; margin: 0.5rem 0;">Restore from Google Drive</h4>
+        <p class="export-desc" style="color: #6b7280; margin: 0.5rem 0 1.5rem 0;">Download and restore previous backups</p>
+        <button id="gdrive-list-btn" class="backup-btn" style="background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 200ms ease; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(168, 85, 247, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(168, 85, 247, 0.3)'">
+          <i class="fa-solid fa-arrow-down-from-line" style="margin-right: 0.5rem;"></i> View Backups
+        </button>
+      </div>
+    </div>
+
+    <!-- Backup List Modal -->
+    <div id="gdrive-backup-list" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.03) 0%, rgba(168, 85, 247, 0.01) 100%); border: 1px solid #e9d5ff; border-radius: 10px; padding: 1.5rem; display: none;">
+      <h4 style="font-weight: 700; color: #1f2937; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-solid fa-history" style="color: #a855f7;"></i>
+        Recent Backups
+      </h4>
+      <div id="gdrive-backups-container" style="max-height: 400px; overflow-y: auto;">
+        <p style="color: #6b7280; text-align: center;">Loading backups...</p>
+      </div>
+    </div>
+
+    <!-- Google Drive Info Section -->
+    <div class="info-section" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%); border-left: 4px solid #a855f7; border-radius: 8px; display: flex; gap: 1rem;">
+      <i class="fa-solid fa-lightbulb" style="color: #a855f7; flex-shrink: 0; margin-top: 0.125rem;"></i>
+      <div style="flex: 1;">
+        <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
+          <strong>Pro Tip:</strong> Google Drive backups are encrypted and stored securely. Your data stays private and accessible anywhere.
+        </p>
+        <p style="margin: 0.5rem 0 0 0; color: #9ca3af; font-size: 0.8rem;">
+          <i class="fa-solid fa-lock" style="margin-right: 0.25rem;"></i>Requires Google Account • Multiple versions • Easy restore
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
     `;
 
@@ -7222,6 +6801,303 @@ ${styles}
         }
       });
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Google Drive Backup & Restore Handlers
+    // ──────────────────────────────────────────────────────────────────
+
+    this._initializeGoogleDriveHandlers();
+  }
+
+  async _initializeGoogleDriveHandlers() {
+    const gdriveBackupBtn = document.getElementById('gdrive-backup-btn');
+    const gdriveListBtn = document.getElementById('gdrive-list-btn');
+    const gdriveStatusText = document.getElementById('gdrive-status-text');
+    const gdriveStatus = document.getElementById('gdrive-status');
+    const gdriveBackupList = document.getElementById('gdrive-backup-list');
+
+    // Check if Google Drive Manager is configured
+    const updateGDriveStatus = () => {
+      if (window.googleDriveManager && window.googleDriveManager.isReady()) {
+        gdriveStatusText.innerHTML = '<i class="fa-solid fa-check-circle" style="color: #10b981; margin-right: 0.5rem;"></i>Google Drive connected and ready';
+        gdriveStatus.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%)';
+        gdriveStatus.style.borderLeftColor = '#10b981';
+        return true;
+      } else {
+        gdriveStatusText.innerHTML = '<i class="fa-solid fa-exclamation-circle" style="color: #f59e0b; margin-right: 0.5rem;"></i>Google Drive not configured - <a href="#" onclick="window.ui.showGoogleDriveSetupGuide(); return false;" style="color: #a855f7; text-decoration: underline; cursor: pointer;">Setup Guide</a>';
+        gdriveStatus.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.02) 100%)';
+        gdriveStatus.style.borderLeftColor = '#f59e0b';
+        return false;
+      }
+    };
+
+    updateGDriveStatus();
+
+    // Backup to Google Drive
+    if (gdriveBackupBtn) {
+      gdriveBackupBtn.addEventListener('click', async () => {
+        if (!window.googleDriveManager || !window.googleDriveManager.isReady()) {
+          Swal.fire({
+            title: 'Google Drive Not Configured',
+            html: '<p>Please set up Google Drive integration first.</p><p><a href="#" onclick="window.ui.showGoogleDriveSetupGuide(); return false;" style="color: #a855f7; text-decoration: underline; cursor: pointer;">View Setup Guide</a></p>',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#a855f7'
+          });
+          return;
+        }
+
+        try {
+          gdriveBackupBtn.disabled = true;
+          gdriveBackupBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Backing up...';
+
+          // Get custom name
+          const customName = await Swal.fire({
+            title: 'Backup Name (Optional)',
+            input: 'text',
+            inputPlaceholder: 'e.g., Monday Backup',
+            showCancelButton: true,
+            confirmButtonText: 'Backup',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#a855f7'
+          });
+
+          if (!customName.isConfirmed) {
+            gdriveBackupBtn.disabled = false;
+            gdriveBackupBtn.innerHTML = '<i class="fa-solid fa-arrow-up-to-line" style="margin-right: 0.5rem;"></i> Backup Now';
+            return;
+          }
+
+          const result = await window.googleDriveManager.createAndSaveBackup(customName.value || undefined);
+
+          gdriveBackupBtn.disabled = false;
+          gdriveBackupBtn.innerHTML = '<i class="fa-solid fa-arrow-up-to-line" style="margin-right: 0.5rem;"></i> Backup Now';
+
+          Swal.fire({
+            title: 'Backup Successful!',
+            html: `<div style="text-align: left;">
+              <p><strong>File:</strong> ${result.fileName}</p>
+              <p><strong>Size:</strong> ${(result.size / 1024).toFixed(2)} KB</p>
+              <p><strong>Time:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+            </div>`,
+            icon: 'success',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#a855f7'
+          });
+        } catch (error) {
+          console.error('Google Drive backup error:', error);
+          gdriveBackupBtn.disabled = false;
+          gdriveBackupBtn.innerHTML = '<i class="fa-solid fa-arrow-up-to-line" style="margin-right: 0.5rem;"></i> Backup Now';
+          Swal.fire({
+            title: 'Backup Failed',
+            text: error.message || 'Failed to backup to Google Drive',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      });
+    }
+
+    // List and Restore from Google Drive
+    if (gdriveListBtn) {
+      gdriveListBtn.addEventListener('click', async () => {
+        if (!window.googleDriveManager || !window.googleDriveManager.isReady()) {
+          Swal.fire({
+            title: 'Google Drive Not Configured',
+            html: '<p>Please set up Google Drive integration first.</p><p><a href="#" onclick="window.ui.showGoogleDriveSetupGuide(); return false;" style="color: #a855f7; text-decoration: underline; cursor: pointer;">View Setup Guide</a></p>',
+            icon: 'warning',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#a855f7'
+          });
+          return;
+        }
+
+        try {
+          gdriveListBtn.disabled = true;
+          gdriveListBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Loading...';
+
+          const backupList = await window.googleDriveManager.getFormattedBackupList();
+
+          gdriveListBtn.disabled = false;
+          gdriveListBtn.innerHTML = '<i class="fa-solid fa-arrow-down-from-line" style="margin-right: 0.5rem;"></i> View Backups';
+
+          if (!backupList.backups || backupList.backups.length === 0) {
+            Swal.fire({
+              title: 'No Backups Found',
+              text: 'You have not created any Google Drive backups yet.',
+              icon: 'info',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#a855f7'
+            });
+            return;
+          }
+
+          // Show backup list in modal
+          gdriveBackupList.style.display = 'block';
+          const container = document.getElementById('gdrive-backups-container');
+          
+          let html = `
+            <div style="margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 8px; border-left: 3px solid #10b981;">
+              <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
+                <i class="fa-solid fa-database" style="margin-right: 0.5rem;"></i>
+                <strong>${backupList.count} backup${backupList.count !== 1 ? 's' : ''}</strong> • Total: ${backupList.totalSize}
+              </p>
+            </div>
+          `;
+
+          backupList.backups.forEach((backup, index) => {
+            html += `
+              <div style="margin-bottom: 0.75rem; padding: 1rem; background: white; border-radius: 8px; border-left: 3px solid #a855f7; display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                  <p style="margin: 0; color: #1f2937; font-weight: 600; font-size: 0.95rem;">
+                    <i class="fa-solid fa-file-backup" style="margin-right: 0.5rem; color: #a855f7;"></i>
+                    ${backup.name}
+                  </p>
+                  <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.8rem;">
+                    ${backup.date} • ${backup.size}
+                  </p>
+                </div>
+                <button onclick="window.ui._restoreFromGoogleDrive('${backup.id}', '${backup.name}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 200ms ease; white-space: nowrap; margin-left: 1rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                  <i class="fa-solid fa-download" style="margin-right: 0.25rem;"></i> Restore
+                </button>
+              </div>
+            `;
+          });
+
+          container.innerHTML = html;
+
+          // Scroll to the list
+          gdriveBackupList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (error) {
+          console.error('Google Drive list error:', error);
+          gdriveListBtn.disabled = false;
+          gdriveListBtn.innerHTML = '<i class="fa-solid fa-arrow-down-from-line" style="margin-right: 0.5rem;"></i> View Backups';
+          Swal.fire({
+            title: 'Failed to Load Backups',
+            text: error.message || 'Failed to load backup list from Google Drive',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
+          });
+        }
+      });
+    }
+  }
+
+  async _restoreFromGoogleDrive(fileId, fileName) {
+    try {
+      const result = await Swal.fire({
+        title: 'Restore from Backup?',
+        html: `<div style="text-align: left; margin: 1rem 0;">
+          <p><strong>File:</strong> ${fileName}</p>
+          <p style="color: #6b7280; margin-top: 1rem;"><strong>This will merge backup data with your current database.</strong></p>
+          <p style="color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.25rem;"></i>
+            Make sure you have a local backup before proceeding.
+          </p>
+        </div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, Restore',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // Download backup
+      const backup = await window.googleDriveManager.downloadBackup(fileId);
+      
+      // Restore
+      await Swal.fire({
+        title: 'Restoring...',
+        icon: 'info',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: async () => {
+          Swal.showLoading();
+          
+          try {
+            await window.googleDriveManager.restoreFromBackup(backup.content);
+            
+            Swal.fire({
+              title: 'Restore Complete!',
+              text: 'Your database has been successfully restored from Google Drive.',
+              icon: 'success',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#10b981'
+            }).then(() => {
+              // Refresh the page to show updated stats
+              window.ui.renderReports();
+            });
+          } catch (error) {
+            Swal.fire({
+              title: 'Restore Failed',
+              text: error.message || 'Failed to restore from backup',
+              icon: 'error',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#ef4444'
+            });
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Restore error:', error);
+      Swal.fire({
+        title: 'Error',
+        text: error.message || 'An error occurred during restore',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#ef4444'
+      });
+    }
+  }
+
+  showGoogleDriveSetupGuide() {
+    Swal.fire({
+      title: 'Google Drive Setup Guide',
+      html: `<div style="text-align: left; max-height: 400px; overflow-y: auto; padding: 0 1rem;">
+        <h4 style="color: #1f2937; margin-top: 1rem; margin-bottom: 0.5rem;">Step 1: Deploy Google Apps Script</h4>
+        <ol style="color: #6b7280; margin: 0.5rem 0 1rem 0; padding-left: 1.5rem; font-size: 0.875rem;">
+          <li>Open <a href="https://script.google.com" target="_blank" style="color: #a855f7; text-decoration: underline;">Google Apps Script</a></li>
+          <li>Create a new project</li>
+          <li>Copy content from <code>google-apps-script.gs</code></li>
+          <li>Paste into the script editor</li>
+          <li>Click "Deploy" → "New Deployment"</li>
+          <li>Select Type: "Web app"</li>
+          <li>Execute as: Your email</li>
+          <li>Who has access: "Anyone"</li>
+          <li>Click "Deploy"</li>
+        </ol>
+
+        <h4 style="color: #1f2937; margin-top: 1rem; margin-bottom: 0.5rem;">Step 2: Configure Script URL</h4>
+        <ol style="color: #6b7280; margin: 0.5rem 0 1rem 0; padding-left: 1.5rem; font-size: 0.875rem;">
+          <li>Copy the deployment URL from Google Apps Script</li>
+          <li>Paste it in browser console:</li>
+        </ol>
+        <div style="background: #f3f4f6; padding: 0.75rem; border-radius: 6px; border-left: 3px solid #a855f7; margin-bottom: 1rem; font-family: monospace; font-size: 0.8rem; overflow-x: auto;">
+          window.googleDriveManager.setScriptUrl('https://script.google.com/....')
+        </div>
+
+        <h4 style="color: #1f2937; margin-top: 1rem; margin-bottom: 0.5rem;">Step 3: Save Configuration</h4>
+        <p style="color: #6b7280; font-size: 0.875rem;">The URL is saved in browser storage and will persist across sessions.</p>
+
+        <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(168, 85, 247, 0.02) 100%); border-left: 3px solid #a855f7; padding: 1rem; border-radius: 6px; margin-top: 1rem;">
+          <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">
+            <i class="fa-solid fa-lightbulb" style="margin-right: 0.5rem; color: #a855f7;"></i>
+            <strong>Need help?</strong> Check the console for detailed error messages.
+          </p>
+        </div>
+      </div>`,
+      icon: 'info',
+      confirmButtonText: 'Got It',
+      confirmButtonColor: '#a855f7',
+      width: '600px'
+    });
   }
 
   async showPayModal(loanId) {
@@ -9622,34 +9498,11 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
 
     this.container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Statistics Bar -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;">
-        <div class="stat-card">
-          <div class="stat-label">Total Records</div>
-          <div class="stat-value">${filteredRecords.length}</div>
-          <div class="stat-subtext">out of ${totalRecords}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Amount</div>
-          <div class="stat-value" style="color: #2563eb;">৳${formatAmount(totalAmount)}</div>
-          <div class="stat-subtext">collected</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Average Amount</div>
-          <div class="stat-value" style="color: #7c3aed;">৳${formatAmount(avgAmount)}</div>
-          <div class="stat-subtext">per transaction</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Date Range</div>
-          <div class="stat-value" style="font-size: 0.85rem;">
-            ${state.dateFrom ? formatDate(state.dateFrom) : 'All'}
-          </div>
-          <div class="stat-subtext">${state.dateTo ? ' to ' + formatDate(state.dateTo) : 'dates'}</div>
-        </div>
-      </div>
+      
+ 
 
       <!-- Filter Panel -->
-      <div class="filter-panel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.02) 100%); border-radius: var(--radius-lg); border: 1px solid rgba(37, 99, 235, 0.1); backdrop-filter: blur(4px);">
+      <div class="filter-panel" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.02) 100%); border-radius: var(--radius-lg); border: 1px solid rgba(37, 99, 235, 0.1); backdrop-filter: blur(4px);">
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
           <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-magnifying-glass" style="margin-right: 0.35rem; color: #2563eb;"></i>Search All Fields</label>
           <input type="text" class="form-control" placeholder="Search: user, amount, date, type, ID, collector..." value="${state.search}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.completeRecordsState.search = this.value; window.ui.completeRecordsState.currentPage = 1; window.ui.renderCompleteRecords();">
@@ -9657,7 +9510,8 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
           <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">From Date</label>
           <input type="date" class="form-control" value="${state.dateFrom}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.completeRecordsState.dateFrom = this.value; window.ui.completeRecordsState.currentPage = 1; window.ui.renderCompleteRecords();">
-        </div>
+        
+          </div>
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
           <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">To Date</label>
           <input type="date" class="form-control" value="${state.dateTo}" style="padding: 0.75rem; border: 1px solid rgba(37, 99, 235, 0.15); border-radius: var(--radius-md);" onchange="window.ui.completeRecordsState.dateTo = this.value; window.ui.completeRecordsState.currentPage = 1; window.ui.renderCompleteRecords();">
@@ -9683,11 +9537,39 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
         </div>
       </div>
 
+
+
+         <!-- Statistics Bar -->
+      <div class="complete-records-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 0.5rem;">
+        <div class="stat-card">
+          <div class="stat-label">Total Records</div>
+          <div class="stat-value">${filteredRecords.length}</div>
+          <div class="stat-subtext">out of ${totalRecords}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Amount</div>
+          <div class="stat-value" style="color: #2563eb;">৳${formatAmount(totalAmount)}</div>
+          <div class="stat-subtext">collected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Average Amount</div>
+          <div class="stat-value" style="color: #7c3aed;">৳${formatAmount(avgAmount)}</div>
+          <div class="stat-subtext">per transaction</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Date Range</div>
+          <div class="stat-value" style="font-size: 0.85rem;">
+            ${state.dateFrom ? formatDate(state.dateFrom) : 'All'}
+          </div>
+          <div class="stat-subtext">${state.dateTo ? ' to ' + formatDate(state.dateTo) : 'dates'}</div>
+        </div>
+      </div>
+
+
       <!-- Action Buttons (Top) -->
       <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1.5rem;">
-        <button class="btn btn-secondary" onclick="window.ui._downloadCompleteRecordsReportPDF();" title="Download Professional PDF Report" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'"><i class="fa-solid fa-file-pdf"></i> Report</button>
-        <button class="btn btn-primary" onclick="window.ui._exportCompleteRecords();" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(37, 99, 235, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'"><i class="fa-solid fa-download"></i> Export to CSV</button>
-      </div>
+        <button class="btn btn-secondary" onclick="window.ui._downloadCompleteRecordsReportPDF();" title="Download Professional PDF Report" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'"><i class="fa-solid fa-file-pdf"></i>Dowload PDF</button>
+         </div>
 
       <!-- Records Table -->
       <div class="records-table-wrapper" style="border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(37, 99, 235, 0.08); background: white;">
@@ -9739,78 +9621,58 @@ ${failed > 0 ? `<div style="color:#ef4444;font-size:0.79rem;margin-top:0.4rem;">
     this.renderCompleteRecords();
   }
 
-  async _exportCompleteRecords() {
-    const borrowers = await window.db.getAll('borrowers');
-    const loans = await window.db.getAll('loans');
-    const transactions = await window.db.getAll('transactions');
-    const savings = await window.db.getAll('savings');
-    const savingsTransactions = await window.db.getAll('savingsTransactions');
-
-    // LOAN RECORDS
-    const loanRecords = transactions.map(txn => {
-      const loan = loans.find(l => l.id === txn.loanId);
-      const borrower = borrowers.find(b => b.id === (loan?.borrowerId || txn.borrowerId));
-      
-      let receivedBy = '';
-      if (loan?.schedule && Array.isArray(loan.schedule)) {
-        const matchingSchedule = loan.schedule.find(sch => {
-          const payHistory = sch.paymentHistory || [];
-          return payHistory.some(ph => 
-            ph.timestamp?.split('T')[0] === txn.date && 
-            ph.amount === txn.amount
-          );
-        });
-        if (matchingSchedule?.paymentHistory?.length > 0) {
-          const lastPayment = matchingSchedule.paymentHistory[matchingSchedule.paymentHistory.length - 1];
-          receivedBy = lastPayment.receivedBy || '';
-        }
-      }
-      if (!receivedBy) {
-        receivedBy = txn.collectedBy || '-';
-      }
-      
-      return { 
-        Date: txn.date || '-', 
-        'User Name': borrower?.name || 'Unknown',
-        'Type': 'Loan (' + (loan?.loanNo || '-') + ')',
-        Amount: txn.amount || 0,
-        'Received By': receivedBy,
-        'Transaction ID': txn.id 
-      };
-    });
-
-    // SAVINGS RECORDS (Modern Sync Pattern)
-    const savingsRecords = savingsTransactions.map(stxn => {
-      const savingsAccount = savings.find(s => s.id === stxn.savingsId);
-      const borrower = borrowers.find(b => b.id === savingsAccount?.userId);
-      
-      // Use receivedBy directly from transaction (modern pattern - now stored with userId)
-      const receivedBy = stxn.receivedBy || '-';
-      
-      return { 
-        Date: stxn.date || '-', 
-        'User Name': borrower?.name || 'Unknown',
-        'Type': 'Savings (' + (savingsAccount?.accountNo || '-') + ')',
-        Amount: stxn.amount || 0,
-        'Received By': receivedBy,
-        'Transaction ID': stxn.id 
-      };
-    });
-
-    // MERGE RECORDS
-    const records = [...loanRecords, ...savingsRecords];
-    
-    const headers = Object.keys(records[0] || {});
-    const csv = [headers.join(','), ...records.map(r => headers.map(h => `"${r[h]}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `complete-records-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    Swal.fire({ icon: 'success', title: 'Export Successful', text: `${records.length} records exported to CSV`, timer: 2000, showConfirmButton: false });
+  _sortLoanSchedule(field, loanId) {
+    if (!this.loanDetailFilterState) return;
+    if (this.loanDetailFilterState.sortBy === field) {
+      this.loanDetailFilterState.sortOrder = this.loanDetailFilterState.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.loanDetailFilterState.sortBy = field;
+      this.loanDetailFilterState.sortOrder = 'asc';
+    }
+    this.renderLoanDetail(loanId);
   }
+
+  async _deleteLoan(loanId) {
+    const result = await Swal.fire({
+      title: "Delete Loan?",
+      text: "This action cannot be undone. All loan schedules and payment history will be permanently deleted.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: "Yes, Delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      const loan = await window.db.get("loans", loanId);
+      if (!loan) {
+        Swal.fire("Error", "Loan not found.", "error");
+        return;
+      }
+
+      const borrowerId = loan.borrowerId;
+
+      try {
+        await window.db.delete("loans", loanId);
+
+        Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "Loan has been permanently deleted.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        // Navigate back to borrower detail
+        window.app.navigate("borrower-detail", borrowerId);
+      } catch (err) {
+        Swal.fire("Error", "Failed to delete loan: " + err.message, "error");
+      }
+    }
+  }
+
+
 
   /**
    * ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -12904,6 +12766,363 @@ ${user?user.name:"Unknown"}&nbsp;&middot;&nbsp;<span style="color:#059669;font-w
         window.app.navigate("savings");
     }
   }
+
+  /* ══════════════════════════════════════════════════════════════
+     Google Drive Cloud Backup Page
+  ══════════════════════════════════════════════════════════════ */
+  renderGoogleDriveBackup() {
+    this.setTitle('Cloud Backup');
+    this.hideFab();
+
+    const savedUrl  = localStorage.getItem('fincollect_gas_url') || '';
+    const isOnline  = navigator.onLine;
+    const lastBackup = localStorage.getItem('fincollect_last_backup');
+    const autoReady  = isOnline && !!savedUrl;
+
+    /* ── helper: animated network dot ── */
+    const dot = (online) =>
+      `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${online ? '#22c55e' : '#f43f5e'};
+       box-shadow:0 0 0 3px ${online ? '#dcfce7' : '#ffe4e6'};flex-shrink:0;"></span>`;
+
+    this.container.innerHTML = `
+    <style>
+      #gdrive-url-input { transition: border-color .2s, background .2s, box-shadow .2s; }
+      #gdrive-url-input:focus { border-color:#2563eb !important; background:#fff !important;
+        box-shadow: 0 0 0 4px rgba(37,99,235,.12); outline:none; }
+      .gdrive-btn-primary { transition: transform .18s, box-shadow .18s; }
+      .gdrive-btn-primary:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(37,99,235,.35); }
+      .gdrive-btn-green { transition: transform .18s, box-shadow .18s; }
+      .gdrive-btn-green:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(34,197,94,.35); }
+      @keyframes gdrive-pulse { 0%,100% { opacity:1; } 50% { opacity:.55; } }
+      .gdrive-pulse { animation: gdrive-pulse 2s infinite; }
+    </style>
+
+    <div style="max-width:580px;margin:0 auto;padding-bottom:5rem;">
+
+      <!-- ── Hero Banner ── -->
+      <div style="background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);border-radius:20px;
+                  padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.25rem;color:white;
+                  position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-30px;right:-25px;width:130px;height:130px;
+                    background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+        <div style="position:absolute;bottom:-45px;left:15px;width:90px;height:90px;
+                    background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+        <div style="display:flex;align-items:center;gap:1rem;position:relative;">
+          <div style="width:54px;height:54px;background:rgba(255,255,255,0.18);border-radius:15px;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-brands fa-google-drive" style="font-size:1.6rem;"></i>
+          </div>
+          <div>
+            <div style="font-size:1.15rem;font-weight:800;letter-spacing:-.3px;">Google Drive Backup</div>
+            <div style="font-size:0.76rem;opacity:.8;margin-top:.2rem;">
+              Secure, automatic cloud storage for all your data
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Status Row ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem;">
+
+        <!-- Network Status -->
+        <div style="background:white;border-radius:16px;padding:1rem;
+                    box-shadow:0 2px 10px rgba(0,0,0,0.06);border:1px solid #f1f5f9;">
+          <div style="font-size:.65rem;color:#94a3b8;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.6px;margin-bottom:.5rem;">Network</div>
+          <div id="gdrive-net-dot" style="display:flex;align-items:center;gap:.5rem;">
+            ${dot(isOnline)}
+            <span style="font-size:.9rem;font-weight:800;color:${isOnline ? '#16a34a' : '#e11d48'};">
+              ${isOnline ? 'Online' : 'Offline'}
+            </span>
+          </div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:.3rem;">
+            ${isOnline ? 'Backup available' : 'Auto-backup paused'}
+          </div>
+        </div>
+
+        <!-- Auto-Backup Status -->
+        <div style="background:white;border-radius:16px;padding:1rem;
+                    box-shadow:0 2px 10px rgba(0,0,0,0.06);border:1px solid #f1f5f9;">
+          <div style="font-size:.65rem;color:#94a3b8;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.6px;margin-bottom:.5rem;">Auto-Backup</div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <i class="fa-solid ${autoReady ? 'fa-circle-check' : 'fa-circle-xmark'}
+               ${autoReady ? 'gdrive-pulse' : ''}"
+               style="color:${autoReady ? '#22c55e' : '#f43f5e'};font-size:.95rem;"></i>
+            <span style="font-size:.9rem;font-weight:800;color:${autoReady ? '#16a34a' : '#e11d48'};">
+              ${autoReady ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:.3rem;">
+            ${autoReady ? 'Runs 2 min after open' : (!savedUrl ? 'Set URL below' : 'Needs internet')}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Last Backup Banner ── -->
+      ${lastBackup ? `
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:16px;
+                  padding:1rem 1.25rem;margin-bottom:1.25rem;border:1px solid #bbf7d0;
+                  display:flex;align-items:center;gap:.75rem;">
+        <div style="width:40px;height:40px;background:#22c55e22;border-radius:11px;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-cloud-arrow-up" style="color:#16a34a;font-size:1.05rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:.84rem;font-weight:700;color:#15803d;">Last Backup Successful</div>
+          <div style="font-size:.72rem;color:#16a34a;">${new Date(lastBackup).toLocaleString()}</div>
+        </div>
+        <i class="fa-solid fa-circle-check" style="color:#22c55e;margin-left:auto;font-size:1.2rem;"></i>
+      </div>
+      ` : `
+      <div style="background:#fffbeb;border-radius:16px;padding:1rem 1.25rem;
+                  margin-bottom:1.25rem;border:1px solid #fde68a;
+                  display:flex;align-items:center;gap:.75rem;">
+        <div style="width:40px;height:40px;background:#fef3c7;border-radius:11px;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;font-size:1.05rem;"></i>
+        </div>
+        <div>
+          <div style="font-size:.84rem;font-weight:700;color:#92400e;">No Backup Yet</div>
+          <div style="font-size:.72rem;color:#b45309;">Configure your Apps Script URL to enable backups</div>
+        </div>
+      </div>
+      `}
+
+      <!-- ── URL Configuration Card ── -->
+      <div style="background:white;border-radius:20px;padding:1.25rem;
+                  box-shadow:0 2px 16px rgba(0,0,0,0.07);border:1px solid #f1f5f9;
+                  margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem;">
+          <div style="width:34px;height:34px;background:#eff6ff;border-radius:10px;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-link" style="color:#2563eb;font-size:.85rem;"></i>
+          </div>
+          <div>
+            <div style="font-size:.9rem;font-weight:700;color:#1e293b;">Apps Script URL</div>
+            <div style="font-size:.7rem;color:#94a3b8;">Your deployed Google Apps Script web app URL</div>
+          </div>
+        </div>
+
+        <!-- URL Input -->
+        <input
+          id="gdrive-url-input"
+          type="url"
+          value="${savedUrl.replace(/"/g, '&quot;')}"
+          placeholder="https://script.google.com/macros/s/…/exec"
+          style="width:100%;padding:.85rem 1rem;
+                 border:2px solid ${savedUrl ? '#bfdbfe' : '#e2e8f0'};
+                 border-radius:12px;font-size:.82rem;font-family:inherit;
+                 color:#1e293b;background:${savedUrl ? '#f0f9ff' : '#f8fafc'};
+                 box-sizing:border-box;margin-bottom:.75rem;"
+        >
+
+        <!-- Save Button -->
+        <button
+          id="gas-save-btn"
+          onclick="window.ui._saveGasUrl()"
+          class="gdrive-btn-primary"
+          style="width:100%;padding:.88rem;
+                 background:linear-gradient(135deg,#2563eb,#1d4ed8);
+                 color:white;border:none;border-radius:12px;
+                 font-size:.88rem;font-weight:700;cursor:pointer;
+                 display:flex;align-items:center;justify-content:center;gap:.5rem;">
+          <i class="fa-solid fa-floppy-disk"></i> Save &amp; Activate
+        </button>
+      </div>
+
+      <!-- ── Manual Backup Card ── -->
+      <div style="background:white;border-radius:20px;padding:1.25rem;
+                  box-shadow:0 2px 16px rgba(0,0,0,0.07);border:1px solid #f1f5f9;
+                  margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem;">
+          <div style="width:34px;height:34px;background:#f0fdf4;border-radius:10px;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-database" style="color:#16a34a;font-size:.85rem;"></i>
+          </div>
+          <div>
+            <div style="font-size:.9rem;font-weight:700;color:#1e293b;">Manual Backup</div>
+            <div style="font-size:.7rem;color:#94a3b8;">Backup all data to Google Drive immediately</div>
+          </div>
+        </div>
+
+        <button
+          id="gdrive-backup-btn"
+          onclick="window.ui._triggerManualBackup()"
+          class="gdrive-btn-green"
+          ${!savedUrl || !isOnline ? 'disabled' : ''}
+          style="width:100%;padding:.88rem;
+                 background:${savedUrl && isOnline
+                   ? 'linear-gradient(135deg,#22c55e,#16a34a)'
+                   : '#e2e8f0'};
+                 color:${savedUrl && isOnline ? 'white' : '#94a3b8'};
+                 border:none;border-radius:12px;
+                 font-size:.88rem;font-weight:700;
+                 cursor:${savedUrl && isOnline ? 'pointer' : 'not-allowed'};
+                 display:flex;align-items:center;justify-content:center;gap:.5rem;">
+          <i class="fa-solid ${!savedUrl ? 'fa-lock' : !isOnline ? 'fa-wifi-slash' : 'fa-cloud-arrow-up'}"></i>
+          ${!savedUrl ? 'Set URL First' : !isOnline ? 'Device is Offline' : 'Backup Now'}
+        </button>
+      </div>
+
+      <!-- ── How it Works ── -->
+      <div style="background:#f5f3ff;border-radius:16px;padding:1.1rem 1.25rem;border:1px solid #ddd6fe;">
+        <div style="font-size:.83rem;font-weight:700;color:#4338ca;margin-bottom:.7rem;
+                    display:flex;align-items:center;gap:.5rem;">
+          <i class="fa-solid fa-circle-info"></i> How it works
+        </div>
+        <div style="font-size:.75rem;color:#6366f1;line-height:1.85;">
+          ${['Deploy <b>google-apps-script.gs</b> to Google Apps Script',
+             'Set the app to deploy as <b>Web App</b> (anyone access)',
+             'Copy the deployment URL and paste it above',
+             'Click <b>Save &amp; Activate</b> — URL is remembered',
+             'Auto-backup fires <b>2 min after opening</b> when online',
+             'Use <b>Backup Now</b> to trigger an instant backup anytime']
+            .map((s, i) => `
+            <div style="display:flex;align-items:flex-start;gap:.55rem;margin-bottom:.25rem;">
+              <span style="background:#6366f1;color:white;border-radius:50%;
+                           width:17px;height:17px;display:inline-flex;align-items:center;
+                           justify-content:center;font-size:.59rem;font-weight:800;
+                           flex-shrink:0;margin-top:2px;">${i+1}</span>
+              <span>${s}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+    </div>`;
+
+    /* ── Listen for online/offline changes while on this page ── */
+    const updateNetStatus = () => {
+      const on = navigator.onLine;
+      const dotEl = document.getElementById('gdrive-net-dot');
+      if (dotEl) {
+        dotEl.innerHTML = `
+          <span style="display:inline-block;width:9px;height:9px;border-radius:50%;
+                       background:${on ? '#22c55e' : '#f43f5e'};
+                       box-shadow:0 0 0 3px ${on ? '#dcfce7' : '#ffe4e6'};"></span>
+          <span style="font-size:.9rem;font-weight:800;color:${on ? '#16a34a' : '#e11d48'};">
+            ${on ? 'Online' : 'Offline'}
+          </span>`;
+      }
+      /* update backup button state too */
+      const btn = document.getElementById('gdrive-backup-btn');
+      const url = localStorage.getItem('fincollect_gas_url') || '';
+      if (btn) {
+        const ok = on && !!url;
+        btn.disabled = !ok;
+        btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+        btn.style.background = ok ? 'linear-gradient(135deg,#22c55e,#16a34a)' : '#e2e8f0';
+        btn.style.color = ok ? 'white' : '#94a3b8';
+        btn.innerHTML = `<i class="fa-solid ${!url ? 'fa-lock' : !on ? 'fa-wifi-slash' : 'fa-cloud-arrow-up'}"></i>
+          ${!url ? 'Set URL First' : !on ? 'Device is Offline' : 'Backup Now'}`;
+      }
+    };
+    this._gdriveOnline  = updateNetStatus;
+    this._gdriveOffline = updateNetStatus;
+    window.addEventListener('online',  this._gdriveOnline);
+    window.addEventListener('offline', this._gdriveOffline);
+  }
+
+  /* ── Save Apps Script URL ── */
+  _saveGasUrl() {
+    const input = document.getElementById('gdrive-url-input');
+    const url   = (input?.value || '').trim();
+    const btn   = document.getElementById('gas-save-btn');
+
+    if (!url) {
+      return Swal.fire({
+        icon: 'warning', title: 'URL Required',
+        text: 'Please enter your Google Apps Script deployment URL.',
+        toast: true, position: 'top-end', timer: 2800, showConfirmButton: false
+      });
+    }
+    if (!url.startsWith('https://script.google.com/')) {
+      return Swal.fire({
+        icon: 'error', title: 'Invalid URL',
+        text: 'The URL must start with https://script.google.com/',
+        toast: true, position: 'top-end', timer: 3200, showConfirmButton: false
+      });
+    }
+
+    localStorage.setItem('fincollect_gas_url', url);
+
+    if (window.googleDriveManager) {
+      window.googleDriveManager.setScriptUrl(url);
+    }
+
+    /* visual feedback on button */
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
+      btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save &amp; Activate';
+        btn.style.background = 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+      }, 2000);
+    }
+
+    Swal.fire({
+      icon: 'success', title: 'URL Saved!',
+      text: 'Auto-backup is now active. It will run 2 min after opening.',
+      toast: true, position: 'top-end', timer: 3000, showConfirmButton: false,
+      timerProgressBar: true
+    });
+
+    /* refresh page after toast */
+    setTimeout(() => this.renderGoogleDriveBackup(), 3100);
+  }
+
+  /* ── Manual / Auto backup trigger ── */
+  async _triggerManualBackup(isAuto = false) {
+    const btn = document.getElementById('gdrive-backup-btn');
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Backing up…';
+      btn.disabled  = true;
+    }
+
+    try {
+      const url = localStorage.getItem('fincollect_gas_url');
+      if (!url) throw new Error('No Apps Script URL configured.');
+      if (!navigator.onLine) throw new Error('Device is offline.');
+
+      if (window.googleDriveManager) {
+        window.googleDriveManager.setScriptUrl(url);
+        await window.googleDriveManager.createAndSaveBackup(isAuto ? 'auto' : 'manual');
+      }
+
+      localStorage.setItem('fincollect_last_backup', new Date().toISOString());
+
+      Swal.fire({
+        icon: 'success',
+        title: '☁️ Backup Complete!',
+        text: isAuto
+          ? 'Auto-backup saved your data to Google Drive.'
+          : 'Your data has been backed up to Google Drive.',
+        toast: true, position: 'top-end',
+        timer: 3500, showConfirmButton: false, timerProgressBar: true
+      });
+
+      /* refresh if still on this page */
+      if (document.getElementById('gdrive-backup-btn')) {
+        this.renderGoogleDriveBackup();
+      }
+    } catch (err) {
+      console.error('[Backup]', err.message);
+      if (!isAuto) {
+        Swal.fire({
+          icon: 'error', title: 'Backup Failed',
+          text: err.message,
+          timer: 4500, showConfirmButton: false
+        });
+      }
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Backup Now';
+        btn.disabled  = false;
+      }
+    }
+  }
 }
 
 window.ui = new UI();
+
+
+
